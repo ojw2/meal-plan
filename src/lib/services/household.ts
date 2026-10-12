@@ -1,7 +1,7 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, gte, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db, DbOrTx } from "@/db";
-import { cookSchedule, dishes, dinners, household, users } from "@/db/schema";
+import { cookSchedule, dinners, household, users } from "@/db/schema";
 import {
   displayNameSchema,
   hashSecret,
@@ -10,6 +10,7 @@ import {
 } from "@/lib/auth/credentials";
 import type { SessionUser } from "@/lib/auth/session";
 import { ServiceError } from "@/lib/errors";
+import { publishDinnerDates } from "@/lib/events";
 import { isValidTimezone, localDate } from "@/lib/time";
 import { assertAdult } from "./permissions";
 
@@ -94,8 +95,9 @@ export async function getCookSchedule(db: DbOrTx): Promise<Record<number, string
 }
 
 /**
- * Replaces the default cook schedule. Per SPEC §3, future dishes whose cook
- * wasn't set by hand follow the new schedule; past dinners are untouched.
+ * Replaces the default cook schedule. Per SPEC §3, upcoming planned nights
+ * whose cook wasn't picked by hand follow the new schedule; past dinners are
+ * untouched.
  */
 export async function setCookSchedule(
   db: Db,
@@ -123,26 +125,30 @@ export async function setCookSchedule(
     }
   }
 
+  const h = await getHousehold(db);
   const today = await householdToday(db, now);
-  await db.transaction(async (tx) => {
+  const changed = await db.transaction(async (tx) => {
+    const dates: string[] = [];
     for (const [weekday, userId] of entries) {
       await tx.delete(cookSchedule).where(eq(cookSchedule.weekday, weekday));
       if (userId) await tx.insert(cookSchedule).values({ weekday, userId });
 
       // Postgres extract(dow) uses 0 = Sunday, matching our weekday numbering.
-      await tx
-        .update(dishes)
+      const rows = await tx
+        .update(dinners)
         .set({ cookUserId: userId })
         .where(
           and(
-            eq(dishes.cookManuallySet, false),
-            sql`${dishes.dinnerId} in (
-              select ${dinners.id} from ${dinners}
-              where ${dinners.date} >= ${today}
-                and extract(dow from ${dinners.date}) = ${weekday}
-            )`,
+            eq(dinners.status, "planned"),
+            eq(dinners.cookManuallySet, false),
+            gte(dinners.date, today),
+            sql`extract(dow from ${dinners.date}) = ${weekday}`,
           ),
-        );
+        )
+        .returning({ date: dinners.date });
+      dates.push(...rows.map((r) => r.date));
     }
+    return dates;
   });
+  publishDinnerDates(changed, h?.weekStartDay ?? 0);
 }

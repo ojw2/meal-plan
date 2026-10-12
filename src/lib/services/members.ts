@@ -1,7 +1,7 @@
-import { and, asc, eq, isNull, ne, sql } from "drizzle-orm";
+import { and, asc, eq, gte, isNull, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db, DbOrTx } from "@/db";
-import { cookSchedule, dinners, dishes, users } from "@/db/schema";
+import { cookSchedule, dinners, users } from "@/db/schema";
 import {
   displayNameSchema,
   hashSecret,
@@ -11,7 +11,8 @@ import {
 } from "@/lib/auth/credentials";
 import { deleteUserSessions, type SessionUser } from "@/lib/auth/session";
 import { ServiceError } from "@/lib/errors";
-import { householdToday } from "./household";
+import { publishDinnerDates } from "@/lib/events";
+import { getHousehold, householdToday } from "./household";
 import { assertAdult } from "./permissions";
 
 export type Role = "adult" | "kid";
@@ -99,20 +100,17 @@ async function assertAnotherActiveAdult(tx: DbOrTx, excludingId: string) {
 
 /**
  * A member who can no longer cook (archived or now a kid) loses their
- * default-schedule slots, and their dishes from today on become unassigned
- * (SPEC §2). Past dinners keep their name.
+ * default-schedule slots, and their nights from today on become unassigned
+ * (SPEC §2). Past dinners keep their name. Returns the changed dates.
  */
 async function releaseCookDuties(tx: DbOrTx, userId: string, today: string) {
   await tx.delete(cookSchedule).where(eq(cookSchedule.userId, userId));
-  await tx
-    .update(dishes)
+  const rows = await tx
+    .update(dinners)
     .set({ cookUserId: null, cookManuallySet: false })
-    .where(
-      and(
-        eq(dishes.cookUserId, userId),
-        sql`${dishes.dinnerId} in (select ${dinners.id} from ${dinners} where ${dinners.date} >= ${today})`,
-      ),
-    );
+    .where(and(eq(dinners.cookUserId, userId), gte(dinners.date, today)))
+    .returning({ date: dinners.date });
+  return rows.map((r) => r.date);
 }
 
 export async function createMember(
@@ -174,34 +172,39 @@ export async function changeRole(
   const valid = secretSchemaFor(role).parse(secret);
   const secretHash = await hashSecret(valid);
   const today = await householdToday(db, now);
-  await db.transaction(async (tx) => {
+  const changed = await db.transaction(async (tx) => {
     await lockMembers(tx);
     const member = await getMember(tx, id);
     if (member.role === role) throw new ServiceError(`Already ${role === "adult" ? "an adult" : "a kid"}.`);
+    let dates: string[] = [];
     if (role === "kid") {
       await assertAnotherActiveAdult(tx, id);
-      await releaseCookDuties(tx, id, today);
+      dates = await releaseCookDuties(tx, id, today);
     }
     await tx
       .update(users)
       .set({ role, ...credentialColumns(role, secretHash) })
       .where(eq(users.id, id));
     await deleteUserSessions(tx, id);
+    return dates;
   });
+  publishDinnerDates(changed, (await getHousehold(db))?.weekStartDay ?? 0);
 }
 
 export async function archiveMember(db: Db, actor: SessionUser, id: string, now = new Date()) {
   assertAdult(actor);
   const today = await householdToday(db, now);
-  await db.transaction(async (tx) => {
+  const changed = await db.transaction(async (tx) => {
     await lockMembers(tx);
     const member = await getMember(tx, id);
-    if (member.archivedAt) return;
+    if (member.archivedAt) return [];
     if (member.role === "adult") await assertAnotherActiveAdult(tx, id);
-    await releaseCookDuties(tx, id, today);
+    const dates = await releaseCookDuties(tx, id, today);
     await tx.update(users).set({ archivedAt: now }).where(eq(users.id, id));
     await deleteUserSessions(tx, id);
+    return dates;
   });
+  publishDinnerDates(changed, (await getHousehold(db))?.weekStartDay ?? 0);
 }
 
 export async function restoreMember(db: DbOrTx, actor: SessionUser, id: string) {

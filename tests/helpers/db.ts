@@ -1,8 +1,8 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getDb } from "@/db";
-import { household, users } from "@/db/schema";
+import { dinners, dishes, household, users } from "@/db/schema";
 import { hashSecret } from "@/lib/auth/credentials";
-import type { SessionUser } from "@/lib/auth/session";
+import { createSession, hashToken, type SessionUser } from "@/lib/auth/session";
 
 export const db = () => getDb();
 
@@ -11,7 +11,7 @@ export async function resetDb() {
   await db().execute(sql`
     truncate household, users, sessions, login_attempts, cook_schedule, recipes,
       recipe_ingredients, recurring_rules, dinners, dishes, grocery_checks,
-      manual_grocery_items, search_cache, api_usage, audit_log
+      manual_grocery_items, search_cache, api_usage, audit_log, week_unlocks
     restart identity cascade
   `);
 }
@@ -46,31 +46,30 @@ export async function seedUser(
   return { id: u.id, displayName: u.displayName, username: u.username, role: u.role };
 }
 
-/** Inserts a planned dinner with one free-text main dish. */
-export async function seedDish(
+/** Inserts a planned dinner with one free-text main dish; returns the dinner id. */
+export async function seedDinner(
   date: string,
   cookUserId: string | null,
   opts: { cookManuallySet?: boolean } = {},
 ) {
-  const { dinners, dishes } = await import("@/db/schema");
-  const [dinner] = await db().insert(dinners).values({ date, status: "planned" }).returning();
-  const [dish] = await db()
-    .insert(dishes)
-    .values({
-      dinnerId: dinner.id,
-      freeTextName: `Dinner ${date}`,
-      role: "main",
-      cookUserId,
-      cookManuallySet: opts.cookManuallySet ?? false,
-      position: 0,
-    })
+  const [dinner] = await db()
+    .insert(dinners)
+    .values({ date, status: "planned", cookUserId, cookManuallySet: opts.cookManuallySet ?? false })
     .returning();
-  return dish.id;
+  await db()
+    .insert(dishes)
+    .values({ dinnerId: dinner.id, freeTextName: `Dinner ${date}`, role: "main", position: 0 });
+  return dinner.id;
 }
 
-export async function cookOf(dishId: string) {
-  const { dishes } = await import("@/db/schema");
-  const { eq } = await import("drizzle-orm");
-  const [d] = await db().select({ cook: dishes.cookUserId }).from(dishes).where(eq(dishes.id, dishId));
+/** The cook of a dinner. */
+export async function cookOf(dinnerId: string) {
+  const [d] = await db().select({ cook: dinners.cookUserId }).from(dinners).where(eq(dinners.id, dinnerId));
   return d.cook;
+}
+
+/** A real session for `user`, so per-session state (week unlocks) works. */
+export async function withSession(user: SessionUser): Promise<SessionUser> {
+  const token = await createSession(db(), user.id);
+  return { ...user, sessionId: hashToken(token) };
 }

@@ -8,7 +8,7 @@ import {
   setupHousehold,
   updateHouseholdSettings,
 } from "@/lib/services/household";
-import { cookOf, db, resetDb, seedDish, seedHousehold, seedUser } from "./helpers/db";
+import { cookOf, db, resetDb, seedDinner, seedHousehold, seedUser } from "./helpers/db";
 
 // Monday 2026-10-12, noon in New York.
 const NOW = new Date("2026-10-12T16:00:00Z");
@@ -74,14 +74,14 @@ describe("setCookSchedule", () => {
     expect(await getCookSchedule(db())).toEqual({ 1: alex.id });
   });
 
-  it("updates today/future dishes on that weekday unless the cook was set by hand", async () => {
+  it("updates today/future planned nights on that weekday unless the cook was set by hand", async () => {
     const alex = await seedUser({ username: "alex" });
     const bo = await seedUser({ username: "bo" });
-    const pastMonday = await seedDish("2026-10-05", alex.id);
-    const todayMonday = await seedDish("2026-10-12", alex.id);
-    const futureMonday = await seedDish("2026-10-19", alex.id);
-    const futureMondayManual = await seedDish("2026-10-26", alex.id, { cookManuallySet: true });
-    const futureWednesday = await seedDish("2026-10-14", alex.id);
+    const pastMonday = await seedDinner("2026-10-05", alex.id);
+    const todayMonday = await seedDinner("2026-10-12", alex.id);
+    const futureMonday = await seedDinner("2026-10-19", alex.id);
+    const futureMondayManual = await seedDinner("2026-10-26", alex.id, { cookManuallySet: true });
+    const futureWednesday = await seedDinner("2026-10-14", alex.id);
 
     await setCookSchedule(db(), alex, { 1: bo.id }, NOW);
 
