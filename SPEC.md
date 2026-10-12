@@ -139,7 +139,7 @@ ApiUsage
 
 Relaxation steps stop as soon as 3 results are collected. The time budget applies **per dish**, on the assumption that dishes are cooked in parallel.
 
-**Commit.** Selecting the main and sides saves each chosen recipe to the household library (deduplicated by `spoonacularId`), then creates `Dish` rows on that dinner with the default cook.
+**Commit.** After picking the main and sides, a **Review** step shows each new Spoonacular pick's ingredients, servings, ready time and link, prefilled and editable. Saving stores each chosen recipe in the household library as the household's own copy (deduplicated by `spoonacularId`; see §6), then creates `Dish` rows on that dinner with the default cook.
 
 ### 4.4 Manual entry
 - Required: dish name and role (main or side).
@@ -219,7 +219,7 @@ Relaxation steps stop as soon as 3 results are collected. The time budget applie
 - **Quota:** the server reads `X-API-Quota-Used` and `X-API-Quota-Left` from each response and records them in `ApiUsage`.
   - When fewer than about 20 points are left, a warning shows in the suggest flow.
   - When the quota is exhausted (HTTP 402), the suggest flow falls back to **library-only matches** with a banner. Manual entry still works, and ingredient parsing is deferred to a background retry the next day.
-- **Library persistence:** chosen recipes are copied into the household library (title, ready time, servings, image URL, source URL, ingredients). Images are hotlinked rather than downloaded. Cooking instructions are **not** stored. The app links to `sourceUrl` instead.
+- **Library persistence:** Spoonacular's terms allow storing only a recipe's id, title and image URL. Those are kept as-is. Ingredients, servings, ready time and source URL are stored as the **household's own copy**, which an adult confirms or edits in the Review step (§4.3). Images are hotlinked rather than downloaded. Cooking instructions are **not** stored. The app links to `sourceUrl` instead, crediting the source as the terms require.
 - Errors and timeouts (8 s) show a retry button and never block manual entry.
 
 ## 7. Technical architecture
@@ -294,8 +294,18 @@ Relaxation steps stop as soon as 3 results are collected. The time budget applie
 17. **Manual ingredients are stored as raw lines for now.** Spoonacular parsing arrives with the suggest flow and grocery list (Milestones 3 and 5).
 18. **The "this week / next week" banner is shown to adults only**, since kids can't act on it.
 
+**Added during Milestone 3:**
+
+19. **Spoonacular recipes are saved as the household's own copy.** The terms allow keeping only id, title and image. The rest is prefilled in a Review step that an adult confirms or edits. Ingredient lines are stored raw and get parsed with the grocery list (Milestone 5).
+20. **Library matches appear for sides too**, not just mains, and they remain when the quota is exhausted. A recipe matches when its title or any ingredient line contains the ingredient and its ready time fits the budget (recipes with no ready time count as fitting). Up to 5 are shown, favorites first.
+21. **The text-match step uses the doubled time budget.** Each result's badge reflects the recipe itself: any recipe over the budget is labeled "N min (over your M min)", and any found by text match is labeled "Similar to ‘X’".
+22. **Any row can be skipped, including the main**, for example to add sides to a night that already has one. At least one dish must be picked.
+23. **Picking a Spoonacular recipe already in the library reuses that recipe** and skips the Review fields. If it was archived, it's restored with the newly confirmed copy.
+24. **Quota is tracked per UTC date**, because Spoonacular resets at midnight UTC. Cached pages are still served when the quota is exhausted. Searching is adults-only, since it spends quota. Expired cache rows are deleted, not just ignored.
+25. **Fixtures are a hand-written sample corpus.** No API key was available to record real responses. A fixture transport filters the corpus the way `complexSearch` would. The ingredients `quota-exhausted` and `spoonacular-down` simulate a 402 and a timeout. Production must set `SPOONACULAR_LIVE=1`.
+
 ## 10. Risks and open questions
-- **Spoonacular ToS:** the free tier limits caching (around 1 hour). Persisting chosen recipes to the library may exceed what's allowed, even for private non-commercial use. **Action:** read the current terms before building §4.5. A fallback is to store only `spoonacularId`, title and the user's own copy of the ingredients.
+- **Spoonacular ToS:** *(reviewed in Milestone 3)* The terms allow caching for at most 1 hour and permanent storage of only the recipe id, title and image URL. The app keeps those and stores the rest as the household's own, adult-confirmed copy (§6, decision 19). This is still a grey area. If Spoonacular objects, drop the prefill and have adults type ingredients themselves.
 - **Free-tier quota (~150 points/day):** a full suggest flow with 2 sides and a couple of rerolls costs several points. Heavy planning days could exhaust the quota. Watch `ApiUsage` for the first few weeks, then decide whether the paid tier is worth it.
 - **iOS PWA quirks:** no notifications are planned, so the main risks are session cookie persistence and Tailscale VPN reconnect latency when the app is opened.
 - **Unit conversion quality:** Spoonacular ingredient IDs make grouping reliable, but amounts like "1 can" or "1 bunch" won't merge. This is acceptable by design.
