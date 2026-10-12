@@ -39,7 +39,7 @@ export default async function SettingsPage() {
   return (
     <>
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold">Settings</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">Settings</h1>
         <div className="flex flex-wrap justify-end gap-2">
           <Link href="/settings/members" className={buttonVariants({ variant: "outline" })}>
             Members

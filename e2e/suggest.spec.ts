@@ -126,7 +126,7 @@ test("a Spoonacular outage offers a retry", async ({ page }) => {
   await alert.getByRole("button", { name: "Retry" }).click();
   await expect(alert).toContainText("Spoonacular isn't responding.");
   // Manual entry is still a click away.
-  await page.getByRole("link", { name: /←/ }).click();
+  await page.getByRole("main").locator(`a[href="/day/${dateIn(24)}"]`).click();
   await expect(page.getByRole("button", { name: "Add dish" })).toBeVisible();
 });
 

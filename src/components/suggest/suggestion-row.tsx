@@ -79,13 +79,13 @@ export function SuggestionRow({
       )}
 
       {row.status === "quota_exhausted" && (
-        <p role="status" className="rounded-lg bg-muted px-3 py-2 text-sm">
+        <p role="status" className="rounded-2xl bg-muted px-4 py-3 text-sm">
           Spoonacular&apos;s daily limit is used up, so only your own recipes are shown. You can still add a
           dish by hand.
         </p>
       )}
       {(row.status === "unavailable" || row.error) && (
-        <div role="alert" className="flex flex-wrap items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm">
+        <div role="alert" className="flex flex-wrap items-center gap-2 rounded-2xl bg-muted px-4 py-3 text-sm">
           <span className="flex-1">{row.error ?? row.message ?? "Spoonacular isn't responding."}</span>
           <Button variant="outline" onClick={onRetry} disabled={row.loading}>
             Retry

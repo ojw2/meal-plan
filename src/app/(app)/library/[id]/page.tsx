@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Clock, ExternalLink, Users } from "lucide-react";
+import { BackLink } from "@/components/back-link";
 import { ActionButton } from "@/components/action-button";
 import { ConfirmAction } from "@/components/confirm-action";
 import { FavoriteButton } from "@/components/library/favorite-button";
@@ -34,11 +34,9 @@ export default async function RecipePage({ params }: PageProps<"/library/[id]">)
     <>
       <LiveScope library />
       <div className="flex flex-col gap-1">
-        <Link href="/library" className="text-sm text-muted-foreground hover:underline">
-          ← Library
-        </Link>
+        <BackLink href="/library">Library</BackLink>
         <div className="flex items-start gap-2">
-          <h1 className="flex-1 text-2xl font-semibold">{recipe.title}</h1>
+          <h1 className="flex-1 text-3xl font-extrabold tracking-tight">{recipe.title}</h1>
           {!recipe.archived && <FavoriteButton recipe={recipe} canEdit={isAdult} />}
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { BackLink } from "@/components/back-link";
 import { ActionButton } from "@/components/action-button";
 import { ActionForm } from "@/components/action-form";
 import { TextField } from "@/components/field";
@@ -43,11 +44,9 @@ export default async function GroceryPage({ searchParams }: PageProps<"/grocery"
     <>
       <LiveScope grocery={[weekStart]} />
       <div className="flex flex-col gap-1">
-        <Link href={`/week?d=${weekStart}`} className="text-sm text-muted-foreground hover:underline">
-          ← Week
-        </Link>
-        <h1 className="text-2xl font-semibold">Grocery list</h1>
-        <div className="flex items-center gap-1">
+        <BackLink href={`/week?d=${weekStart}`}>Week</BackLink>
+        <h1 className="text-3xl font-extrabold tracking-tight">Grocery list</h1>
+        <div className="mt-3 flex items-center gap-1 rounded-full bg-card p-1 ring-1 ring-foreground/5 lg:max-w-md">
           <Link
             href={`/grocery?d=${addDays(weekStart, -7)}`}
             aria-label="Previous week"
@@ -55,7 +54,7 @@ export default async function GroceryPage({ searchParams }: PageProps<"/grocery"
           >
             <ChevronLeft />
           </Link>
-          <p className="font-medium">
+          <p className="flex-1 text-center font-semibold">
             <span className="sr-only">Week of </span>
             {weekLabel(weekStart)}
           </p>
@@ -67,7 +66,7 @@ export default async function GroceryPage({ searchParams }: PageProps<"/grocery"
             <ChevronRight />
           </Link>
           {weekStart !== cal.currentWeekStart && (
-            <Link href="/grocery" className={buttonVariants({ variant: "outline", className: "ml-auto" })}>
+            <Link href="/grocery" className={buttonVariants({ variant: "secondary", className: "h-9 bg-accent text-accent-foreground" })}>
               This week
             </Link>
           )}
@@ -83,8 +82,12 @@ export default async function GroceryPage({ searchParams }: PageProps<"/grocery"
       )}
 
       {list.aisles.map(({ aisle, items }) => (
-        <section key={aisle} aria-label={aisle} className="flex flex-col gap-1">
-          <h2 className="text-sm font-semibold text-muted-foreground">{aisle}</h2>
+        <section
+          key={aisle}
+          aria-label={aisle}
+          className="flex flex-col rounded-3xl bg-card px-4 pt-3.5 pb-1 ring-1 ring-foreground/5"
+        >
+          <h2 className="text-xs font-bold tracking-wide text-muted-foreground uppercase">{aisle}</h2>
           <ul className="flex flex-col divide-y">
             {items.map((item) => (
               <li key={item.key}>
@@ -142,7 +145,7 @@ export default async function GroceryPage({ searchParams }: PageProps<"/grocery"
       )}
 
       {list.noLongerNeeded.length > 0 && (
-        <details className="rounded-xl border px-4 py-2" data-testid="no-longer-needed">
+        <details className="rounded-3xl bg-card px-4 py-2 ring-1 ring-foreground/5" data-testid="no-longer-needed">
           <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium md:min-h-9">
             No longer needed (already bought) · {list.noLongerNeeded.length}
           </summary>
@@ -187,7 +190,7 @@ function Item({ item, weekStart, editable }: { item: GroceryItem; weekStart: str
           {item.text && <span className="text-muted-foreground"> · {item.text}</span>}
         </span>
         {item.increase && (
-          <span className="text-xs font-medium text-amber-700 no-underline dark:text-amber-400" role="note">
+          <span className="text-xs font-semibold text-attention-foreground no-underline" role="note">
             {item.increase} needed since you checked this
           </span>
         )}

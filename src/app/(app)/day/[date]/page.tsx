@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowDown, ArrowUp, BookOpen, ExternalLink, Repeat, Sparkles, X } from "lucide-react";
+import { BackLink } from "@/components/back-link";
 import { ActionButton } from "@/components/action-button";
 import { ActionForm } from "@/components/action-form";
 import { ConfirmAction } from "@/components/confirm-action";
@@ -53,11 +54,9 @@ export default async function DayPage({ params }: PageProps<"/day/[date]">) {
     <>
       <LiveScope weeks={[weekStart]} />
       <div className="flex flex-col gap-1">
-        <Link href={`/week?d=${date}`} className="text-sm text-muted-foreground hover:underline">
-          ← Week
-        </Link>
+        <BackLink href={`/week?d=${date}`}>Week</BackLink>
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold">{formatDate(date, { weekday: "long", month: "long", day: "numeric" })}</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">{formatDate(date, { weekday: "long", month: "long", day: "numeric" })}</h1>
           {date === cal.today && <Badge>Today</Badge>}
         </div>
       </div>
@@ -217,7 +216,7 @@ function DinnerDetails({
   defaultServings: number;
 }) {
   const cookOptions = [
-    { value: "", label: "Unassigned" },
+    { value: "", label: "No cook" },
     ...adults.map((a) => ({ value: a.id, label: a.displayName })),
   ];
   // Keep a removed member visible if they still hold this (past) night.
