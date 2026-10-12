@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signIn, signInOk, signOut } from "./helpers";
+import { openAccountMenu, signIn, signInOk, signOut } from "./helpers";
 
 // Milestone 1 flows: first-run setup, settings, members, roles, sign-in limits.
 // Serial: each test builds on the household created by the first.
@@ -24,7 +24,7 @@ test("first visit goes through household setup", async ({ page }) => {
 
 test("adult edits household settings and the default cook schedule", async ({ page }) => {
   await signInOk(page, "alex", "password123");
-  await page.getByRole("link", { name: "Settings" }).click();
+  await (await openAccountMenu(page)).getByRole("menuitem", { name: "Settings" }).click();
 
   await page.getByLabel("Household name").fill("Testers HQ");
   await page.getByLabel("Week starts on").selectOption({ label: "Monday" });
@@ -80,7 +80,9 @@ test("adult adds a kid and another adult", async ({ page }) => {
 test("kid can sign in with a PIN but can't reach settings", async ({ page }) => {
   await signInOk(page, "sam", "2468");
   await expect(page.getByRole("heading", { name: "Hi, Sam" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Settings" })).toHaveCount(0);
+  const menu = await openAccountMenu(page);
+  await expect(menu.getByRole("menuitem")).toHaveText(["Sign out"]);
+  await page.keyboard.press("Escape");
 
   await page.goto("/settings");
   await expect(page).toHaveURL(/\/$/);
