@@ -16,6 +16,8 @@ tailscale serve --bg 3000        # HTTPS at https://<server>.<tailnet>.ts.net
 
 Open the Tailscale URL. The first visit asks you to create the household and its first adult. Add everyone else under **Settings → Members**: adults sign in with a password, kids with a 4–6 digit PIN.
 
+For real recipe suggestions, add a [Spoonacular](https://spoonacular.com/food-api) API key to `.env` as `SPOONACULAR_API_KEY` and set `SPOONACULAR_LIVE=1`. Without them, suggestions come from a small built-in sample set. The free tier allows about 150 points a day, and **Settings** shows today's usage.
+
 The app listens only on `127.0.0.1:3000` (`APP_BIND` / `APP_PORT`), so it's reachable only through Tailscale. Migrations run automatically when the app starts.
 
 ### Backups
