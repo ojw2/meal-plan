@@ -1,18 +1,19 @@
 import type { SearchResult } from "./types";
 
 /**
- * The constraint-relaxation ladder (SPEC §4.3): strict, then a looser time
- * budget (×1.5, ×2), then the ingredient as a text match instead of a
- * required ingredient.
+ * The constraint-relaxation ladder (SPEC §4.3): the main ingredient plus any
+ * extras, then the main ingredient alone, then a looser time budget (×1.5,
+ * ×2), then the ingredient as a text match instead of a required ingredient.
  */
-export type RelaxStep = { by: "include" | "query"; maxReadyTime: number };
+export type RelaxStep = { by: "include" | "query"; maxReadyTime: number; withExtras: boolean };
 
-export function relaxationSteps(maxTime: number): RelaxStep[] {
+export function relaxationSteps(maxTime: number, hasExtras = false): RelaxStep[] {
   return [
-    { by: "include", maxReadyTime: maxTime },
-    { by: "include", maxReadyTime: Math.round(maxTime * 1.5) },
-    { by: "include", maxReadyTime: maxTime * 2 },
-    { by: "query", maxReadyTime: maxTime * 2 },
+    ...(hasExtras ? [{ by: "include" as const, maxReadyTime: maxTime, withExtras: true }] : []),
+    { by: "include", maxReadyTime: maxTime, withExtras: false },
+    { by: "include", maxReadyTime: Math.round(maxTime * 1.5), withExtras: false },
+    { by: "include", maxReadyTime: maxTime * 2, withExtras: false },
+    { by: "query", maxReadyTime: maxTime * 2, withExtras: false },
   ];
 }
 
@@ -32,6 +33,9 @@ export type FetchPage = (
 export type Found = { result: SearchResult; step: RelaxStep };
 
 export const PAGE_SIZE = 3;
+
+/** Extra ingredients per dish (SPEC §4.3). Pure module, so the suggest form can import it too. */
+export const MAX_EXTRAS = 3;
 /**
  * Pages fetched per step in one request. A looser step re-finds the stricter
  * step's results first, so one page can come back all duplicates.

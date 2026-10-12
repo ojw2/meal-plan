@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { SuggestResponse } from "@/lib/services/suggest";
+import { MAX_EXTRAS } from "@/lib/spoonacular/relax";
 import { SuggestionRow, type Choice, type Row } from "./suggestion-row";
 
 const PROTEINS = [
@@ -40,15 +41,15 @@ const PROTEINS = [
   "lamb",
 ];
 const TIME_PRESETS = [15, 30, 45, 60];
-const MAX_SIDES = 3;
 
-type Stage = "inputs" | "main" | "sides" | "confirm";
+type Stage = "inputs" | "main" | "side" | "confirm";
 type Quota = SuggestResponse["quota"];
 
-const newRow = (key: string, role: Row["role"], ingredient: string): Row => ({
-  key,
+const newRow = (role: Row["role"], ingredient: string, extras: string[]): Row => ({
+  key: role,
   role,
   ingredient,
+  extras,
   library: [],
   results: [],
   cursor: null,
@@ -59,14 +60,19 @@ const newRow = (key: string, role: Row["role"], ingredient: string): Row => ({
   choice: null,
 });
 
-/** The suggest flow (SPEC §4.3): inputs, pick a main, pick sides, confirm. */
+/** "chicken + lemon, garlic" */
+const describe = (ingredient: string, extras: string[]) =>
+  extras.length ? `${ingredient} + ${extras.join(", ")}` : ingredient;
+
+/** The suggest flow (SPEC §4.3): inputs, pick a main, pick a side, confirm. */
 export function SuggestFlow({ date, initialQuota }: { date: string; initialQuota: Quota }) {
   const [stage, setStage] = useState<Stage>("inputs");
   const [protein, setProtein] = useState("");
+  const [mainExtras, setMainExtras] = useState<Chips>(emptyChips);
   const [preset, setPreset] = useState<number | "custom">(30);
   const [customTime, setCustomTime] = useState("");
-  const [sideDraft, setSideDraft] = useState("");
-  const [sides, setSides] = useState<string[]>([]);
+  const [side, setSide] = useState("");
+  const [sideExtras, setSideExtras] = useState<Chips>(emptyChips);
   const [inputError, setInputError] = useState<string>();
   const [rows, setRows] = useState<Row[]>([]);
   const [quota, setQuota] = useState(initialQuota);
@@ -84,6 +90,7 @@ export function SuggestFlow({ date, initialQuota }: { date: string; initialQuota
         body: JSON.stringify({
           role: row.role,
           ingredient: row.ingredient,
+          extras: row.extras,
           maxTime,
           cursor: more ? row.cursor : null,
         }),
@@ -120,38 +127,35 @@ export function SuggestFlow({ date, initialQuota }: { date: string; initialQuota
   /** Retry continues from the last good position, keeping what's shown. */
   const retry = (row: Row) => load(row, row.cursor !== null);
 
-  function addSide() {
-    const s = sideDraft.trim();
-    if (!s || sides.length >= MAX_SIDES || sides.some((x) => x.toLowerCase() === s.toLowerCase())) return;
-    setSides([...sides, s]);
-    setSideDraft("");
-  }
-
   function startSearch(e: React.FormEvent) {
     e.preventDefault();
+    // An extra still being typed counts, as if "Add" had been tapped.
+    const mainChips = commitDraft(mainExtras);
+    const sideChips = commitDraft(sideExtras);
+    setMainExtras(mainChips);
+    setSideExtras(sideChips);
     if (!protein.trim()) return setInputError("Enter a protein.");
+    if (!side.trim() && sideChips.values.length) {
+      return setInputError("Enter a side ingredient, or remove the side's extras.");
+    }
     if (!Number.isInteger(maxTime) || maxTime < 5 || maxTime > 600) {
       return setInputError("Pick a time budget between 5 and 600 minutes.");
     }
     setInputError(undefined);
-    const pending = sideDraft.trim();
-    const allSides = pending && sides.length < MAX_SIDES ? [...sides, pending] : sides;
-    setSides(allSides);
-    setSideDraft("");
-    const main = newRow("main", "main", protein.trim());
-    setRows([main, ...allSides.map((s, i) => newRow(`side-${i}`, "side", s))]);
+    const main = newRow("main", protein.trim(), mainChips.values);
+    setRows(side.trim() ? [main, newRow("side", side.trim(), sideChips.values)] : [main]);
     setStage("main");
     load(main, false);
   }
 
-  function goToSides() {
-    setStage("sides");
-    // Side searches start only once they're needed, to save API points.
-    for (const r of rows) if (r.role === "side" && !r.cursor && !r.loading) load(r, false);
+  function goToSide() {
+    setStage("side");
+    // The side search starts only once it's needed, to save API points.
+    if (sideRow && !sideRow.cursor && !sideRow.loading) load(sideRow, false);
   }
 
   const mainRow = rows.find((r) => r.role === "main");
-  const sideRows = rows.filter((r) => r.role === "side");
+  const sideRow = rows.find((r) => r.role === "side");
   const picks = rows.flatMap((r) =>
     r.choice && r.choice.kind !== "skip" ? [{ role: r.role, choice: r.choice }] : [],
   );
@@ -171,23 +175,55 @@ export function SuggestFlow({ date, initialQuota }: { date: string; initialQuota
           </CardHeader>
           <CardContent>
             <form onSubmit={startSearch} className="flex flex-col gap-4" noValidate>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="protein">Protein</Label>
-                <Input
-                  id="protein"
-                  list="proteins"
-                  value={protein}
-                  onChange={(e) => setProtein(e.target.value)}
-                  autoComplete="off"
-                  maxLength={60}
-                  required
+              <fieldset className="flex flex-col gap-3">
+                <legend className="mb-1 text-base font-bold">Main</legend>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="protein">Protein</Label>
+                  <Input
+                    id="protein"
+                    list="proteins"
+                    value={protein}
+                    onChange={(e) => setProtein(e.target.value)}
+                    autoComplete="off"
+                    maxLength={60}
+                    required
+                  />
+                  <datalist id="proteins">
+                    {PROTEINS.map((p) => (
+                      <option key={p} value={p} />
+                    ))}
+                  </datalist>
+                </div>
+                <ChipsInput
+                  id="main-extras"
+                  label="Cook it with"
+                  placeholder="e.g. lemon"
+                  chips={mainExtras}
+                  onChange={setMainExtras}
                 />
-                <datalist id="proteins">
-                  {PROTEINS.map((p) => (
-                    <option key={p} value={p} />
-                  ))}
-                </datalist>
-              </div>
+              </fieldset>
+
+              <fieldset className="flex flex-col gap-3">
+                <legend className="mb-1 text-base font-bold">Side (optional)</legend>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="side">Side ingredient</Label>
+                  <Input
+                    id="side"
+                    value={side}
+                    placeholder="e.g. broccoli"
+                    onChange={(e) => setSide(e.target.value)}
+                    autoComplete="off"
+                    maxLength={60}
+                  />
+                </div>
+                <ChipsInput
+                  id="side-extras"
+                  label="Side cooked with"
+                  placeholder="e.g. garlic"
+                  chips={sideExtras}
+                  onChange={setSideExtras}
+                />
+              </fieldset>
 
               <fieldset className="flex flex-col gap-1.5">
                 <legend className="mb-1.5 text-sm font-medium">Max cook time</legend>
@@ -218,49 +254,6 @@ export function SuggestFlow({ date, initialQuota }: { date: string; initialQuota
                 )}
               </fieldset>
 
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="side">Side ingredients (up to {MAX_SIDES}, optional)</Label>
-                {sides.length > 0 && (
-                  <ul className="flex flex-wrap gap-2" aria-label="Side ingredients">
-                    {sides.map((s) => (
-                      <li key={s} className="flex items-center gap-1 rounded-full bg-secondary py-1 pl-3 text-sm">
-                        {s}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="size-11 rounded-full md:size-8"
-                          aria-label={`Remove ${s}`}
-                          onClick={() => setSides(sides.filter((x) => x !== s))}
-                        >
-                          <X />
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {sides.length < MAX_SIDES && (
-                  <div className="flex gap-2">
-                    <Input
-                      id="side"
-                      value={sideDraft}
-                      placeholder="e.g. broccoli"
-                      maxLength={60}
-                      autoComplete="off"
-                      onChange={(e) => setSideDraft(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addSide();
-                        }
-                      }}
-                    />
-                    <Button type="button" variant="outline" onClick={addSide}>
-                      Add
-                    </Button>
-                  </div>
-                )}
-              </div>
-
               {inputError && (
                 <p role="alert" className="text-sm text-destructive">
                   {inputError}
@@ -277,7 +270,8 @@ export function SuggestFlow({ date, initialQuota }: { date: string; initialQuota
       {stage !== "inputs" && (
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
           <span className="text-muted-foreground">
-            {protein.trim()} · {maxTime} min{sides.length > 0 && ` · ${sides.join(", ")}`}
+            {describe(protein.trim(), mainExtras.values)} · {maxTime} min
+            {sideRow && ` · ${describe(sideRow.ingredient, sideRow.extras)}`}
           </span>
           <Button variant="ghost" onClick={() => setStage("inputs")}>
             Change search
@@ -297,41 +291,108 @@ export function SuggestFlow({ date, initialQuota }: { date: string; initialQuota
           />
           <StageNav
             onBack={() => setStage("inputs")}
-            next={sideRows.length ? "Next: sides" : "Review"}
+            next={sideRow ? "Next: side" : "Review"}
             disabled={!mainRow.choice}
-            onNext={() => (sideRows.length ? goToSides() : setStage("confirm"))}
+            onNext={() => (sideRow ? goToSide() : setStage("confirm"))}
           />
         </>
       )}
 
-      {stage === "sides" && (
+      {stage === "side" && sideRow && (
         <>
-          <h2 className="text-lg font-semibold">Pick sides</h2>
-          {sideRows.map((row) => (
-            <section key={row.key} className="flex flex-col gap-2" aria-labelledby={`${row.key}-title`}>
-              <h3 id={`${row.key}-title`} className="font-medium capitalize">
-                {row.ingredient}
-              </h3>
-              <SuggestionRow
-                row={row}
-                maxTime={maxTime}
-                onChoose={(choice) => patch(row.key, { choice })}
-                onMore={() => load(row, true)}
-                onRetry={() => retry(row)}
-              />
-            </section>
-          ))}
+          <h2 className="text-lg font-semibold">Pick a side</h2>
+          <SuggestionRow
+            row={sideRow}
+            maxTime={maxTime}
+            onChoose={(choice) => patch(sideRow.key, { choice })}
+            onMore={() => load(sideRow, true)}
+            onRetry={() => retry(sideRow)}
+          />
           <StageNav
             onBack={() => setStage("main")}
             next="Review"
-            disabled={sideRows.some((r) => !r.choice)}
+            disabled={!sideRow.choice}
             onNext={() => setStage("confirm")}
           />
         </>
       )}
 
       {stage === "confirm" && (
-        <Confirm date={date} picks={picks} onBack={() => setStage(sideRows.length ? "sides" : "main")} />
+        <Confirm date={date} picks={picks} onBack={() => setStage(sideRow ? "side" : "main")} />
+      )}
+    </div>
+  );
+}
+
+/** Up to MAX_EXTRAS ingredient chips, plus what's being typed. */
+type Chips = { values: string[]; draft: string };
+const emptyChips: Chips = { values: [], draft: "" };
+
+/** Adds the typed-in ingredient unless it's empty, a repeat or one too many. */
+function commitDraft({ values, draft }: Chips): Chips {
+  const d = draft.trim();
+  if (!d || values.length >= MAX_EXTRAS || values.some((v) => v.toLowerCase() === d.toLowerCase())) {
+    return { values, draft: "" };
+  }
+  return { values: [...values, d], draft: "" };
+}
+
+function ChipsInput({
+  id,
+  label,
+  placeholder,
+  chips,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  placeholder: string;
+  chips: Chips;
+  onChange: (chips: Chips) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={id}>
+        {label} (up to {MAX_EXTRAS}, optional)
+      </Label>
+      {chips.values.length > 0 && (
+        <ul className="flex flex-wrap gap-2" aria-label={label}>
+          {chips.values.map((v) => (
+            <li key={v} className="flex items-center gap-1 rounded-full bg-secondary py-1 pl-3 text-sm">
+              {v}
+              <Button
+                type="button"
+                variant="ghost"
+                className="size-11 rounded-full md:size-8"
+                aria-label={`Remove ${v}`}
+                onClick={() => onChange({ ...chips, values: chips.values.filter((x) => x !== v) })}
+              >
+                <X />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {chips.values.length < MAX_EXTRAS && (
+        <div className="flex gap-2">
+          <Input
+            id={id}
+            value={chips.draft}
+            placeholder={placeholder}
+            maxLength={60}
+            autoComplete="off"
+            onChange={(e) => onChange({ ...chips, draft: e.target.value })}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onChange(commitDraft(chips));
+              }
+            }}
+          />
+          <Button type="button" variant="outline" onClick={() => onChange(commitDraft(chips))}>
+            Add
+          </Button>
+        </div>
       )}
     </div>
   );

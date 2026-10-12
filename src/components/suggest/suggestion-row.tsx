@@ -11,11 +11,13 @@ export type Choice =
   | { kind: "spoonacular"; suggestion: Suggestion }
   | { kind: "skip" };
 
-/** One row of the flow: the main, or one side ingredient. */
+/** One row of the flow: the main or the side. */
 export type Row = {
   key: string;
   role: "main" | "side";
   ingredient: string;
+  /** Ingredients to cook it with; results lacking some are badged. */
+  extras: string[];
   library: LibraryMatch[];
   results: Suggestion[];
   cursor: SuggestCursor | null;
@@ -71,6 +73,7 @@ export function SuggestionRow({
                 <>
                   {m.readyInMinutes && <Minutes value={m.readyInMinutes} />}
                   {m.isFavorite && <Badge variant="secondary">Favorite</Badge>}
+                  <Without extras={m.missingExtras} />
                 </>
               }
             />
@@ -117,6 +120,7 @@ export function SuggestionRow({
                       <Badge variant="outline">Within {maxTime} min</Badge>
                     ))}
                   {s.similarTo && <Badge variant="secondary">Similar to ‘{s.similarTo}’</Badge>}
+                  <Without extras={s.missingExtras} />
                   {s.libraryRecipeId && <Badge variant="secondary">In your library</Badge>}
                 </>
               }
@@ -149,11 +153,17 @@ export function SuggestionRow({
           aria-pressed={row.choice?.kind === "skip"}
           onClick={() => onChoose(row.choice?.kind === "skip" ? null : { kind: "skip" })}
         >
-          Skip {row.role === "main" ? "the main" : row.ingredient}
+          Skip the {row.role}
         </Button>
       </div>
     </div>
   );
+}
+
+/** "Without lemon, garlic": extras the recipe doesn't use. */
+function Without({ extras }: { extras: string[] }) {
+  if (!extras.length) return null;
+  return <Badge variant="outline">Without {extras.join(", ")}</Badge>;
 }
 
 function Minutes({ value }: { value: number }) {

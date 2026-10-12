@@ -117,6 +117,57 @@ describe("suggestDishes", () => {
     expect((await search(alex, "chicken", { cursor: res.cursor })).library).toEqual([]);
   });
 
+  it("requires the extra ingredients first, then drops them and says which are missing", async () => {
+    const alex = await seedUser({ username: "alex" });
+    // Only one chicken main within 30 min uses both lemon and garlic.
+    const res = await search(alex, "chicken", { extras: ["lemon", "garlic"] });
+    expect(res.results.map((s) => [s.title, s.missingExtras])).toEqual([
+      ["Lemon Garlic Chicken Thighs", []],
+      ["Chicken Fajitas", ["lemon", "garlic"]],
+      ["Honey Soy Chicken Stir-Fry", ["lemon", "garlic"]],
+    ]);
+    // Dropping extras comes before loosening time: nothing is over budget yet.
+    expect(res.results.every((s) => !s.overBudget)).toBe(true);
+    expect(res.cursor.offsets).toHaveLength(5);
+
+    const more = await search(alex, "chicken", { extras: ["lemon", "garlic"], cursor: res.cursor });
+    expect(more.results).toHaveLength(3);
+    // "Show 3 more" must keep the same extras.
+    await expect(search(alex, "chicken", { cursor: res.cursor })).rejects.toThrow("The search changed");
+  });
+
+  it("does the same for a side's extra ingredients", async () => {
+    const alex = await seedUser({ username: "alex" });
+    const res = await search(alex, "broccoli", { role: "side", maxTime: 15, extras: ["garlic"] });
+    expect(res.results.map((s) => [s.title, s.missingExtras])).toEqual([
+      ["Garlic Parmesan Broccoli", []],
+      ["Broccoli Salad", ["garlic"]],
+      ["Steamed Broccoli with Lemon", ["garlic"]],
+    ]);
+  });
+
+  it("ignores extras that repeat the main ingredient, and allows at most 3", async () => {
+    const alex = await seedUser({ username: "alex" });
+    const res = await search(alex, "chicken", { extras: ["Chicken", "lemon", "LEMON"] });
+    // Deduplicated to one real extra: 4 steps plus the one with extras.
+    expect(res.cursor.offsets).toHaveLength(5);
+    expect(res.results[0]).toMatchObject({ title: "Lemon Garlic Chicken Thighs", missingExtras: [] });
+    await expect(search(alex, "chicken", { extras: ["a", "b", "c", "d"] })).rejects.toThrow(ZodError);
+  });
+
+  it("ranks library recipes that use more of the extras first", async () => {
+    const alex = await seedUser({ username: "alex" });
+    await seedRecipe({ title: "Chicken Pot Pie", readyInMinutes: 30 });
+    await seedRecipe({ title: "Lemon Chicken", readyInMinutes: 25 });
+    await seedRecipe({ title: "Chicken Soup", readyInMinutes: 20, isFavorite: true }, ["1 chicken", "1 lemon, juiced"]);
+    const res = await search(alex, "chicken", { extras: ["lemon"] });
+    expect(res.library.map((l) => [l.title, l.missingExtras])).toEqual([
+      ["Chicken Soup", []],
+      ["Lemon Chicken", []],
+      ["Chicken Pot Pie", ["lemon"]],
+    ]);
+  });
+
   it("falls back to library-only matches when the quota is exhausted", async () => {
     const alex = await seedUser({ username: "alex" });
     await seedRecipe({ title: "Chicken Pot Pie", readyInMinutes: 30 });
@@ -245,6 +296,10 @@ describe("addSuggestedDishes", () => {
       addSuggestedDishes(db(), alex, TUESDAY, [fajitas({ sourceUrl: "javascript:alert(1)" })], NOW),
     ).rejects.toThrow(ZodError);
     await expect(addSuggestedDishes(db(), alex, TUESDAY, [], NOW)).rejects.toThrow(ZodError);
+    // One main and one side at most.
+    await expect(
+      addSuggestedDishes(db(), alex, TUESDAY, [fajitas(), fajitas({ spoonacularId: 900003, title: "Stir-Fry" })], NOW),
+    ).rejects.toThrow("Pick at most one main and one side");
     await expect(addSuggestedDishes(db(), alex, LAST_WEEK, [fajitas()], NOW)).rejects.toThrow(ServiceError);
     // Nothing was half-saved.
     expect(await db().select().from(recipes).where(eq(recipes.spoonacularId, 900002))).toHaveLength(0);

@@ -22,14 +22,26 @@ function laterTuesday() {
   throw new Error("unreachable");
 }
 
-async function startSearch(page: Page, protein: string, opts: { time?: string; sides?: string[] } = {}) {
+async function startSearch(
+  page: Page,
+  protein: string,
+  opts: { time?: string; extras?: string[]; side?: string; sideExtras?: string[] } = {},
+) {
   await page.getByLabel("Protein").fill(protein);
+  await addExtras(page, "Main", opts.extras);
+  if (opts.side) await page.getByLabel("Side ingredient", { exact: true }).fill(opts.side);
+  await addExtras(page, "Side (optional)", opts.sideExtras);
   if (opts.time) await page.getByRole("button", { name: opts.time, exact: true }).click();
-  for (const side of opts.sides ?? []) {
-    await page.getByLabel(/Side ingredients/).fill(side);
-    await page.getByRole("button", { name: "Add", exact: true }).click();
-  }
   await page.getByRole("button", { name: "Find mains" }).click();
+}
+
+/** Types each extra ingredient into the Main or Side fieldset's chip input. */
+async function addExtras(page: Page, fieldset: string, extras: string[] = []) {
+  const group = page.getByRole("group", { name: fieldset });
+  for (const extra of extras) {
+    await group.getByLabel(/with \(up to 3/).fill(extra);
+    await group.getByRole("button", { name: "Add", exact: true }).click();
+  }
 }
 
 const suggestions = (page: Page, ingredient: string) => page.getByRole("region", { name: `Suggestions: ${ingredient}` });
@@ -42,7 +54,7 @@ test("adult picks a suggested main and side and saves their own copy", async ({ 
   await page.getByRole("link", { name: "Suggest recipes" }).click();
   await expect(page).toHaveURL(new RegExp(`/day/${date}/suggest$`));
 
-  await startSearch(page, "chicken", { time: "30 min", sides: ["broccoli"] });
+  await startSearch(page, "chicken", { time: "30 min", side: "broccoli" });
   const mains = suggestions(page, "chicken");
   await expect(mains.getByRole("button", { name: /^Choose / })).toHaveCount(3);
   await expect(mains.getByText("Within 30 min")).toHaveCount(3);
@@ -54,9 +66,9 @@ test("adult picks a suggested main and side and saves their own copy", async ({ 
 
   await page.getByRole("button", { name: "Choose Chicken Fajitas" }).click();
   await expect(page.getByRole("button", { name: "Choose Chicken Fajitas" })).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "Next: sides" }).click();
+  await page.getByRole("button", { name: "Next: side" }).click();
 
-  await expect(page.getByRole("heading", { name: "Pick sides" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Pick a side" })).toBeVisible();
   const review = page.getByRole("button", { name: "Review" });
   await expect(review).toBeDisabled();
   await page.getByRole("button", { name: "Choose Roasted Broccoli" }).click();
@@ -114,6 +126,42 @@ test("library recipes come first and can be picked", async ({ page }) => {
   await expect(page.getByLabel("Ingredients")).toHaveCount(0);
   await page.getByRole("button", { name: "Add to dinner" }).click();
   await expect(dishNames(page)).toHaveText(["Tacos"]);
+});
+
+test("main and side each search with extra ingredients, dropping them only when needed", async ({ page }) => {
+  const date = dateIn(26);
+  await signInOk(page, "alex", "password123");
+  await page.goto(`/day/${date}/suggest`);
+  await startSearch(page, "chicken", {
+    time: "30 min",
+    extras: ["lemon", "garlic"],
+    side: "broccoli",
+    sideExtras: ["garlic"],
+  });
+  await expect(page.getByText("chicken + lemon, garlic · 30 min · broccoli + garlic")).toBeVisible();
+
+  // Only one chicken main uses both; the rest are labeled with what they lack.
+  const mains = suggestions(page, "chicken");
+  await expect(mains.getByRole("button", { name: /^Choose / })).toHaveCount(3);
+  await expect(mains.getByRole("button", { name: /^Choose / }).first()).toHaveAccessibleName(
+    "Choose Lemon Garlic Chicken Thighs",
+  );
+  await expect(mains.getByText("Without lemon, garlic")).toHaveCount(2);
+  await page.getByRole("button", { name: "Choose Lemon Garlic Chicken Thighs" }).click();
+  await page.getByRole("button", { name: "Next: side" }).click();
+
+  // One side row, garlic first.
+  const sides = suggestions(page, "broccoli");
+  await expect(sides.getByRole("button", { name: /^Choose / }).first()).toHaveAccessibleName(
+    "Choose Garlic Parmesan Broccoli",
+  );
+  await expect(sides.getByText("Without garlic").first()).toBeVisible();
+  await page.getByRole("button", { name: "Choose Garlic Parmesan Broccoli" }).click();
+  await page.getByRole("button", { name: "Review" }).click();
+  await page.getByRole("button", { name: "Add to dinner" }).click();
+
+  await expect(page).toHaveURL(new RegExp(`/day/${date}$`));
+  await expect(dishNames(page)).toHaveText(["Lemon Garlic Chicken Thighs", "Garlic Parmesan Broccoli"]);
 });
 
 test("a Spoonacular outage offers a retry", async ({ page }) => {
