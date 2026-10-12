@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Download } from "lucide-react";
 import { ActionForm } from "@/components/action-form";
 import { SelectField, TextField } from "@/components/field";
 import { TimezoneSelect } from "@/components/timezone-select";
@@ -116,6 +117,22 @@ export default async function SettingsPage() {
           {!isLive() && (
             <p className="text-muted-foreground">Using built-in sample recipes (SPOONACULAR_LIVE is not set).</p>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Your data</CardTitle>
+          <CardDescription>
+            Download everything as a JSON file: settings, members (without passwords or PINs), recipes,
+            dinners, recurring meals and grocery lists.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* A route handler, not a page, so a plain link. */}
+          <a href="/api/export" download className={buttonVariants({ variant: "outline" })}>
+            <Download /> Export all data
+          </a>
         </CardContent>
       </Card>
     </>
