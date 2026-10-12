@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { BackLink } from "@/components/back-link";
 import { ActionForm } from "@/components/action-form";
 import { ConfirmAction } from "@/components/confirm-action";
 import { SelectField, TextField } from "@/components/field";
@@ -29,11 +29,9 @@ export default async function MembersPage() {
 
   return (
     <>
-      <div>
-        <Link href="/settings" className="text-sm text-muted-foreground hover:underline">
-          ← Settings
-        </Link>
-        <h1 className="text-2xl font-semibold">Members</h1>
+      <div className="flex flex-col">
+        <BackLink href="/settings">Settings</BackLink>
+        <h1 className="text-3xl font-extrabold tracking-tight">Members</h1>
       </div>
 
       <ul className="flex flex-col gap-3" aria-label="Active members">
@@ -69,7 +67,7 @@ export default async function MembersPage() {
 
       {archived.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-lg font-medium">Removed members</h2>
+          <h2 className="text-xl font-bold">Removed members</h2>
           <ul className="flex flex-col gap-3" aria-label="Removed members">
             {archived.map((m) => (
               <li key={m.id}>

@@ -13,8 +13,19 @@ export async function signInOk(page: Page, username: string, secret: string) {
   await expect(page.getByRole("heading", { name: /^Hi, / })).toBeVisible();
 }
 
+/** Opens the avatar menu (Settings, Sign out). */
+export async function openAccountMenu(page: Page) {
+  const menu = page.getByRole("menu");
+  // A click that lands before hydration does nothing, so retry until the menu shows.
+  await expect(async () => {
+    if (!(await menu.isVisible())) await page.getByRole("button", { name: "Account" }).click();
+    await expect(menu).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  return menu;
+}
+
 export async function signOut(page: Page) {
-  await page.getByRole("button", { name: "Sign out" }).click();
+  await (await openAccountMenu(page)).getByRole("menuitem", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/login$/);
 }
 

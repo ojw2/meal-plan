@@ -5,13 +5,13 @@ import { ConfirmAction } from "@/components/confirm-action";
 export function PastWeekBanner({ date, unlocked, isAdult }: { date: string; unlocked: boolean; isAdult: boolean }) {
   if (unlocked) {
     return (
-      <p role="status" className="rounded-lg bg-muted px-3 py-2 text-sm">
+      <p role="status" className="rounded-2xl bg-muted px-4 py-3 text-sm">
         This past week is unlocked for editing until you sign out.
       </p>
     );
   }
   return (
-    <div className="flex flex-col gap-2 rounded-lg bg-muted px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-2 rounded-2xl bg-muted px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
       <p>This week is in the past, so it&apos;s read-only.</p>
       {isAdult && (
         <ConfirmAction

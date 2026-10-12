@@ -159,7 +159,7 @@ export function SuggestFlow({ date, initialQuota }: { date: string; initialQuota
   return (
     <div className="flex flex-col gap-4">
       {quota.low && quota.left !== null && quota.left > 0 && (
-        <p role="status" className="rounded-lg bg-muted px-3 py-2 text-sm">
+        <p role="status" className="rounded-2xl bg-muted px-4 py-3 text-sm">
           Only {Math.floor(quota.left)} Spoonacular points left today. Each search uses about one.
         </p>
       )}

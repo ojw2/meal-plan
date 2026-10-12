@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Star } from "lucide-react";
+import { BackLink } from "@/components/back-link";
 import { ActionButton } from "@/components/action-button";
 import { parseLibraryParams, RecipeSearch } from "@/components/library/recipe-search";
 import { LiveScope } from "@/components/live-sync";
@@ -33,10 +33,8 @@ export default async function LibraryPickerPage({ params, searchParams }: PagePr
     <>
       <LiveScope library weeks={[weekStartOf(date, cal.weekStartDay)]} />
       <div className="flex flex-col gap-1">
-        <Link href={`/day/${date}`} className="text-sm text-muted-foreground hover:underline">
-          ← {formatDate(date, { weekday: "long", month: "short", day: "numeric" })}
-        </Link>
-        <h1 className="text-2xl font-semibold">Add from library</h1>
+        <BackLink href={`/day/${date}`}>{formatDate(date, { weekday: "long", month: "short", day: "numeric" })}</BackLink>
+        <h1 className="text-3xl font-extrabold tracking-tight">Add from library</h1>
       </div>
       <RecipeSearch action={`/day/${date}/library`} q={q} role={role} />
       {items.length === 0 ? (

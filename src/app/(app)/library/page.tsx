@@ -27,7 +27,7 @@ export default async function LibraryPage({ searchParams }: PageProps<"/library"
   return (
     <>
       <LiveScope library />
-      <h1 className="text-2xl font-semibold">{show === "archived" ? "Archived recipes" : "Library"}</h1>
+      <h1 className="text-3xl font-extrabold tracking-tight">{show === "archived" ? "Archived recipes" : "Library"}</h1>
       <RecipeSearch action="/library" q={q} role={role} show={show} showFilter />
       {items.length === 0 ? (
         <p className="text-muted-foreground">
@@ -52,7 +52,7 @@ function RecipeList({ items, today, canEdit }: { items: LibraryItem[]; today: st
               {r.imageUrl && (
                 // Hotlinked recipe images (SPEC §6).
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={r.imageUrl} alt="" className="size-12 shrink-0 rounded-lg object-cover" />
+                <img src={r.imageUrl} alt="" className="size-14 shrink-0 rounded-2xl object-cover" />
               )}
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <Link href={`/library/${r.id}`} className="font-medium underline-offset-4 hover:underline">

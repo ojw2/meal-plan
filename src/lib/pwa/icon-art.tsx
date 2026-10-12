@@ -1,10 +1,10 @@
 import { ImageResponse } from "next/og";
 
-/** Matches the app's dark neutral (`--primary` in globals.css). */
-export const ICON_BACKGROUND = "#171717";
+/** Matches the app's herb green (`--primary` in globals.css). */
+export const ICON_BACKGROUND = "#2f6b3a";
 
 /**
- * The app icon: a light fork and knife on a dark square. The glyph sits in
+ * The app icon: a white fork and knife on a green square. The glyph sits in
  * the middle 50%, inside the maskable safe zone, so one image serves both
  * "any" and "maskable".
  */
@@ -27,7 +27,7 @@ export function iconResponse(size: number) {
           height={size * 0.5}
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#fafafa"
+          stroke="#ffffff"
           strokeWidth={2}
           strokeLinecap="round"
           strokeLinejoin="round"

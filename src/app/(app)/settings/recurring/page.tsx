@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { BackLink } from "@/components/back-link";
 import { ActionButton } from "@/components/action-button";
 import { ActionForm } from "@/components/action-form";
 import { ConfirmAction } from "@/components/confirm-action";
@@ -30,10 +30,8 @@ export default async function RecurringPage() {
     <>
       <LiveScope rules library />
       <div className="flex flex-col gap-1">
-        <Link href="/settings" className="text-sm text-muted-foreground hover:underline">
-          ← Settings
-        </Link>
-        <h1 className="text-2xl font-semibold">Recurring meals</h1>
+        <BackLink href="/settings">Settings</BackLink>
+        <h1 className="text-3xl font-extrabold tracking-tight">Recurring meals</h1>
         <p className="text-sm text-muted-foreground">
           Fill a weekday with the same dinner every week. Changes apply to upcoming nights you haven&apos;t edited by
           hand.

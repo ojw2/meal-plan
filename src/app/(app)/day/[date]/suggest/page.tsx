@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { BackLink } from "@/components/back-link";
 import { SuggestFlow } from "@/components/suggest/suggest-flow";
 import { getDb } from "@/db";
 import { requireUser } from "@/lib/auth/dal";
@@ -24,10 +24,8 @@ export default async function SuggestPage({ params }: PageProps<"/day/[date]/sug
   return (
     <>
       <div className="flex flex-col gap-1">
-        <Link href={`/day/${date}`} className="text-sm text-muted-foreground hover:underline">
-          ← {formatDate(date, { weekday: "long", month: "short", day: "numeric" })}
-        </Link>
-        <h1 className="text-2xl font-semibold">Suggest a dinner</h1>
+        <BackLink href={`/day/${date}`}>{formatDate(date, { weekday: "long", month: "short", day: "numeric" })}</BackLink>
+        <h1 className="text-3xl font-extrabold tracking-tight">Suggest a dinner</h1>
       </div>
       <SuggestFlow date={date} initialQuota={{ left: quota?.left ?? null, low: isQuotaLow(quota) }} />
     </>

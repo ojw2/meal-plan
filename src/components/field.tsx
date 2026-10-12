@@ -32,7 +32,7 @@ export function SelectField({ label, name, options, id, className, ...props }: S
         id={selectId}
         name={name}
         className={cn(
-          "h-11 md:h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-base md:text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30",
+          "h-11 md:h-9 w-full rounded-xl border border-input bg-transparent px-3 text-base md:text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30",
           className,
         )}
         {...props}
@@ -59,7 +59,7 @@ export function TextareaField({ label, hint, id, name, className, ...props }: Te
         name={name}
         rows={3}
         className={cn(
-          "w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30",
+          "w-full min-w-0 rounded-xl border border-input bg-transparent px-3 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30",
           className,
         )}
         {...props}
