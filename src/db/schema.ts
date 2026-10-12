@@ -200,6 +200,8 @@ export const dishes = pgTable(
   },
   (t) => [
     index("dishes_dinner_idx").on(t.dinnerId),
+    // Library history: last made / times made per recipe.
+    index("dishes_recipe_idx").on(t.recipeId),
     check(
       "dishes_recipe_xor_free_text",
       sql`(${t.recipeId} is null) <> (${t.freeTextName} is null)`,

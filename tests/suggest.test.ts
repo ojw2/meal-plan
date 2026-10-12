@@ -7,7 +7,7 @@ import { subscribe, type AppEvent } from "@/lib/events";
 import { setCookSchedule } from "@/lib/services/household";
 import { getDinner } from "@/lib/services/planner";
 import { addSuggestedDishes, suggestDishes, type Pick } from "@/lib/services/suggest";
-import { db, resetDb, seedHousehold, seedUser } from "./helpers/db";
+import { db, resetDb, seedHousehold, seedRecipe, seedUser } from "./helpers/db";
 
 // These run against the fixture corpus (SPOONACULAR_LIVE is unset in tests).
 // Monday 2026-10-12, noon in New York; weeks start on Sunday.
@@ -31,19 +31,6 @@ const fajitas = (overrides: Partial<Extract<Pick, { kind: "spoonacular" }>> = {}
   sourceUrl: "https://example.com/recipes/chicken-fajitas",
   ...overrides,
 });
-
-async function seedRecipe(values: Partial<typeof recipes.$inferInsert> & { title: string }, lines: string[] = []) {
-  const [r] = await db()
-    .insert(recipes)
-    .values({ source: "manual", dishType: "main", ...values })
-    .returning();
-  if (lines.length) {
-    await db()
-      .insert(recipeIngredients)
-      .values(lines.map((rawText, position) => ({ recipeId: r.id, rawText, position })));
-  }
-  return r;
-}
 
 beforeEach(async () => {
   await resetDb();

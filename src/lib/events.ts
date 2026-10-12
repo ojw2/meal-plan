@@ -5,7 +5,12 @@ import { weekStartOf } from "@/lib/time";
  * In-process event bus (SPEC §5). Every mutation publishes the week it
  * touched; the SSE route (Milestone 6) relays these to connected clients.
  */
-export type AppEvent = { type: "dinner.updated"; date: string; weekStart: string };
+export type AppEvent =
+  | { type: "dinner.updated"; date: string; weekStart: string }
+  /** A library recipe changed (favorite, archive). No week is affected. */
+  | { type: "recipe.updated"; recipeId: string }
+  /** A recurring rule changed. Affected dinners publish their own events. */
+  | { type: "rules.updated" };
 
 // One emitter across dev hot reloads.
 const globalForEvents = globalThis as unknown as { __events?: EventEmitter };

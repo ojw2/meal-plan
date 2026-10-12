@@ -42,11 +42,21 @@ export type DinnerView = {
   cook: { id: string; displayName: string; archived: boolean } | null;
   cookManuallySet: boolean;
   servingsOverride: number | null;
+  /** Set when the night came from a recurring rule (SPEC §4.6). */
+  recurring: { ruleId: string; overridden: boolean } | null;
   dishes: DishView[];
 };
 
 function emptyDinner(date: string): DinnerView {
-  return { date, status: "unplanned", cook: null, cookManuallySet: false, servingsOverride: null, dishes: [] };
+  return {
+    date,
+    status: "unplanned",
+    cook: null,
+    cookManuallySet: false,
+    servingsOverride: null,
+    recurring: null,
+    dishes: [],
+  };
 }
 
 /** Dinners for every date in [from, to], in order. */
@@ -58,6 +68,8 @@ export async function getDinners(db: DbOrTx, from: string, to: string): Promise<
       status: dinners.status,
       cookManuallySet: dinners.cookManuallySet,
       servingsOverride: dinners.servingsOverride,
+      recurringRuleId: dinners.recurringRuleId,
+      overridden: dinners.overridden,
       cookId: users.id,
       cookName: users.displayName,
       cookArchivedAt: users.archivedAt,
@@ -93,6 +105,7 @@ export async function getDinners(db: DbOrTx, from: string, to: string): Promise<
       cook: r.cookId ? { id: r.cookId, displayName: r.cookName!, archived: r.cookArchivedAt !== null } : null,
       cookManuallySet: r.cookManuallySet,
       servingsOverride: r.servingsOverride,
+      recurring: r.recurringRuleId ? { ruleId: r.recurringRuleId, overridden: r.overridden } : null,
       dishes: dishRows
         .filter((d) => d.dinnerId === r.id)
         .map((d) => ({
@@ -212,7 +225,7 @@ export async function editDinner<T>(
   return result;
 }
 
-async function defaultCookFor(tx: DbOrTx, date: string): Promise<string | null> {
+export async function defaultCookFor(tx: DbOrTx, date: string): Promise<string | null> {
   const [row] = await tx
     .select({ userId: cookSchedule.userId })
     .from(cookSchedule)
