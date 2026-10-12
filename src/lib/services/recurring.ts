@@ -17,12 +17,15 @@ import { assertAdult } from "./permissions";
 
 const role = z.enum(["main", "side"], { error: "Pick main or side" });
 
+/** Dishes per recurring meal (and rows in its form). */
+export const MAX_RULE_DISHES = 6;
+
 const templateDishSchema = z.union([
   z.object({ recipeId: z.uuid(), role }),
   z.object({ freeTextName: z.string().min(1).max(120), role }),
 ]);
 export type TemplateDish = z.infer<typeof templateDishSchema>;
-const templateSchema = z.array(templateDishSchema).min(1).max(6);
+const templateSchema = z.array(templateDishSchema).min(1).max(MAX_RULE_DISHES);
 
 type Rule = typeof recurringRules.$inferSelect;
 
@@ -37,7 +40,7 @@ export const ruleInputSchema = z
     dishes: z
       .array(z.object({ role, name: z.string().trim().max(120, "Dish name is too long") }))
       .transform((ds) => ds.filter((d) => d.name))
-      .pipe(z.array(z.object({ role, name: z.string() })).min(1, "Add at least one dish").max(6, "At most 6 dishes")),
+      .pipe(z.array(z.object({ role, name: z.string() })).min(1, "Add at least one dish").max(MAX_RULE_DISHES, `At most ${MAX_RULE_DISHES} dishes`)),
   })
   .refine((r) => !r.endDate || r.endDate >= r.startDate, { message: "The end date must be after the start date" });
 export type RuleInput = z.input<typeof ruleInputSchema>;
@@ -322,6 +325,9 @@ export async function createRuleFromDinner(db: Db, actor: SessionUser, date: str
   const dinner = await getDinner(db, date);
   if (dinner.status !== "planned" || !dinner.dishes.length) throw new ServiceError("Add a dish before repeating a night.");
   if (dinner.recurring && !dinner.recurring.overridden) throw new ServiceError("This night already repeats.");
+  if (dinner.dishes.length > MAX_RULE_DISHES) {
+    throw new ServiceError(`A recurring meal can have at most ${MAX_RULE_DISHES} dishes.`);
+  }
   const template: TemplateDish[] = dinner.dishes.map((d) =>
     d.recipe ? { recipeId: d.recipe.id, role: d.role } : { freeTextName: d.name, role: d.role },
   );

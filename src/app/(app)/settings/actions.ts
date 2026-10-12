@@ -18,6 +18,7 @@ import {
   updateMemberProfile,
   type Role,
 } from "@/lib/services/members";
+import { createRule, MAX_RULE_DISHES, setRuleActive, updateRule, type RuleInput } from "@/lib/services/recurring";
 
 // Every action re-reads the session and lets the service enforce the adult role.
 
@@ -115,5 +116,44 @@ export async function restoreMemberAction(_prev: FormState, formData: FormData):
     await restoreMember(getDb(), actor, formString(formData, "id"));
     revalidatePath("/", "layout");
     return "Member restored.";
+  });
+}
+
+function parseRule(formData: FormData): RuleInput {
+  const dishes = Array.from({ length: MAX_RULE_DISHES }, (_, i) => ({
+    role: formString(formData, `role-${i}`) as "main" | "side",
+    name: formString(formData, `name-${i}`),
+  }));
+  return {
+    weekday: Number(formString(formData, "weekday")),
+    startDate: formString(formData, "startDate"),
+    endDate: formString(formData, "endDate"),
+    dishes,
+  };
+}
+
+export async function createRuleAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const actor = await requireUser();
+  return toFormState(async () => {
+    await createRule(getDb(), actor, parseRule(formData));
+    revalidatePath("/", "layout");
+    return "Recurring meal added.";
+  });
+}
+
+export async function updateRuleAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const actor = await requireUser();
+  return toFormState(async () => {
+    await updateRule(getDb(), actor, formString(formData, "id"), parseRule(formData));
+    revalidatePath("/", "layout");
+    return "Saved. Upcoming nights you haven't changed now follow it.";
+  });
+}
+
+export async function setRuleActiveAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const actor = await requireUser();
+  return toFormState(async () => {
+    await setRuleActive(getDb(), actor, formString(formData, "id"), formString(formData, "active") === "true");
+    revalidatePath("/", "layout");
   });
 }

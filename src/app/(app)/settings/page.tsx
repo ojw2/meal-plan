@@ -38,9 +38,14 @@ export default async function SettingsPage() {
     <>
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">Settings</h1>
-        <Link href="/settings/members" className={buttonVariants({ variant: "outline" })}>
-          Members
-        </Link>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Link href="/settings/members" className={buttonVariants({ variant: "outline" })}>
+            Members
+          </Link>
+          <Link href="/settings/recurring" className={buttonVariants({ variant: "outline" })}>
+            Recurring meals
+          </Link>
+        </div>
       </div>
 
       <Card>

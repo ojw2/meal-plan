@@ -18,7 +18,6 @@ import { db, resetDb, seedHousehold, seedRecipe, seedUser } from "./helpers/db";
 
 // Monday 2026-10-12, noon in New York; weeks start on Sunday.
 const NOW = new Date("2026-10-12T16:00:00Z");
-const TODAY = "2026-10-12";
 const LAST_TUESDAY = "2026-10-06";
 const TUESDAY = "2026-10-13";
 const NEXT_TUESDAY = "2026-10-20";

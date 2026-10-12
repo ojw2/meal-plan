@@ -15,6 +15,9 @@ import {
   unlockWeek,
   updateDinnerDetails,
 } from "@/lib/services/planner";
+import { copyLastWeek } from "@/lib/services/copy-week";
+import { addLibraryDish } from "@/lib/services/library";
+import { createRuleFromDinner } from "@/lib/services/recurring";
 import { addSuggestedDishes, type Pick } from "@/lib/services/suggest";
 
 // Every action re-reads the session and lets the service enforce the adult
@@ -129,3 +132,40 @@ export async function addSuggestedDishesAction(_prev: FormState, formData: FormD
   if (state?.error) return state;
   redirect(`/day/${date}`);
 }
+
+/** "From library": adds the recipe, then returns to the day editor. */
+export async function addLibraryDishAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const actor = await requireUser();
+  const date = formString(formData, "date");
+  const state = await toFormState(async () => {
+    await addLibraryDish(getDb(), actor, date, formString(formData, "recipeId"));
+    refresh();
+  });
+  if (state?.error) return state;
+  redirect(`/day/${date}`);
+}
+
+export async function repeatWeeklyAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const actor = await requireUser();
+  return toFormState(async () => {
+    await createRuleFromDinner(getDb(), actor, formString(formData, "date"));
+    refresh();
+  });
+}
+
+export async function copyLastWeekAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const actor = await requireUser();
+  return toFormState(async () => {
+    const r = await copyLastWeek(getDb(), actor, formString(formData, "date"));
+    refresh();
+    if (r.filled + r.skipped === 0) {
+      return r.past ? "Nothing to copy: those nights are already past." : "Nothing to copy from last week.";
+    }
+    const parts = [`Filled ${nights(r.filled)}`];
+    if (r.skipped) parts.push(`skipped ${r.skipped} already planned`);
+    if (r.past) parts.push(`${r.past} already past`);
+    return `${parts.join("; ")}.`;
+  });
+}
+
+const nights = (n: number) => `${n} night${n === 1 ? "" : "s"}`;
