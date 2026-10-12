@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { FavoriteButton } from "@/components/library/favorite-button";
 import { parseLibraryParams, RecipeSearch } from "@/components/library/recipe-search";
+import { LiveScope } from "@/components/live-sync";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDb } from "@/db";
@@ -25,6 +26,7 @@ export default async function LibraryPage({ searchParams }: PageProps<"/library"
 
   return (
     <>
+      <LiveScope library />
       <h1 className="text-2xl font-semibold">{show === "archived" ? "Archived recipes" : "Library"}</h1>
       <RecipeSearch action="/library" q={q} role={role} show={show} showFilter />
       {items.length === 0 ? (

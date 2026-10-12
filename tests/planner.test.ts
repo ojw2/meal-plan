@@ -400,6 +400,9 @@ describe("events", () => {
 
     await seedDinner("2026-10-20", null); // Tuesday next week
     await setCookSchedule(db(), alex, { 2: alex.id }, NOW);
-    expect(events).toEqual([{ type: "dinner.updated", date: "2026-10-20", weekStart: "2026-10-18" }]);
+    expect(events).toEqual([
+      { type: "dinner.updated", date: "2026-10-20", weekStart: "2026-10-18" },
+      { type: "household.updated" },
+    ]);
   });
 });

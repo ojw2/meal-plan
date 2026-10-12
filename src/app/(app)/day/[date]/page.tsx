@@ -6,6 +6,7 @@ import { ActionButton } from "@/components/action-button";
 import { ActionForm } from "@/components/action-form";
 import { ConfirmAction } from "@/components/confirm-action";
 import { CheckboxField, SelectField, TextareaField, TextField } from "@/components/field";
+import { LiveScope } from "@/components/live-sync";
 import { CookLabel, NIGHT_OFF_LABEL } from "@/components/planner/day-card";
 import { PastWeekBanner } from "@/components/planner/past-week-banner";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +51,7 @@ export default async function DayPage({ params }: PageProps<"/day/[date]">) {
 
   return (
     <>
+      <LiveScope weeks={[weekStart]} />
       <div className="flex flex-col gap-1">
         <Link href={`/week?d=${date}`} className="text-sm text-muted-foreground hover:underline">
           ← Week

@@ -3,7 +3,7 @@ import { weekStartOf } from "@/lib/time";
 
 /**
  * In-process event bus (SPEC §5). Every mutation publishes the week it
- * touched; the SSE route (Milestone 6) relays these to connected clients.
+ * touched; the SSE route (`/api/events`) relays these to connected clients.
  */
 export type AppEvent =
   | { type: "dinner.updated"; date: string; weekStart: string }
@@ -12,7 +12,12 @@ export type AppEvent =
   /** A recurring rule changed. Affected dinners publish their own events. */
   | { type: "rules.updated" }
   /** A week's grocery list changed: a check-off, a manual item, or newly parsed ingredients. */
-  | { type: "grocery.updated"; weekStart: string };
+  | { type: "grocery.updated"; weekStart: string }
+  /**
+   * Household-wide data changed (settings, cook schedule, members). Any
+   * screen may show it, e.g. a renamed cook, so every client refetches.
+   */
+  | { type: "household.updated" };
 
 // One emitter across dev hot reloads.
 const globalForEvents = globalThis as unknown as { __events?: EventEmitter };

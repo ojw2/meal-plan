@@ -5,6 +5,7 @@ import { Clock, ExternalLink, Users } from "lucide-react";
 import { ActionButton } from "@/components/action-button";
 import { ConfirmAction } from "@/components/confirm-action";
 import { FavoriteButton } from "@/components/library/favorite-button";
+import { LiveScope } from "@/components/live-sync";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDb } from "@/db";
@@ -31,6 +32,7 @@ export default async function RecipePage({ params }: PageProps<"/library/[id]">)
 
   return (
     <>
+      <LiveScope library />
       <div className="flex flex-col gap-1">
         <Link href="/library" className="text-sm text-muted-foreground hover:underline">
           ← Library

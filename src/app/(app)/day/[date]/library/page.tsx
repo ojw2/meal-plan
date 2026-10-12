@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { Star } from "lucide-react";
 import { ActionButton } from "@/components/action-button";
 import { parseLibraryParams, RecipeSearch } from "@/components/library/recipe-search";
+import { LiveScope } from "@/components/live-sync";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDb } from "@/db";
@@ -30,6 +31,7 @@ export default async function LibraryPickerPage({ params, searchParams }: PagePr
 
   return (
     <>
+      <LiveScope library weeks={[weekStartOf(date, cal.weekStartDay)]} />
       <div className="flex flex-col gap-1">
         <Link href={`/day/${date}`} className="text-sm text-muted-foreground hover:underline">
           ← {formatDate(date, { weekday: "long", month: "short", day: "numeric" })}

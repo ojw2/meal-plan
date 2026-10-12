@@ -99,6 +99,7 @@ export async function updateHouseholdSettings(
     return rekeyGroceryWeeks(tx, localDate(input.timezone, now), before.weekStartDay, input.weekStartDay);
   });
   for (const weekStart of touched) publish({ type: "grocery.updated", weekStart });
+  publish({ type: "household.updated" });
 }
 
 /** Weekday (0–6) → adult user id. */
@@ -164,4 +165,5 @@ export async function setCookSchedule(
     return dates;
   });
   publishDinnerDates(changed, h?.weekStartDay ?? 0);
+  publish({ type: "household.updated" });
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Copy, ShoppingCart } from "lucide-react";
 import { ActionButton } from "@/components/action-button";
+import { LiveScope } from "@/components/live-sync";
 import { DayCard } from "@/components/planner/day-card";
 import { PastWeekBanner } from "@/components/planner/past-week-banner";
 import { buttonVariants } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export default async function WeekPage({ searchParams }: PageProps<"/week">) {
   return (
     // data-wide lets the layout widen for the 7-column desktop grid.
     <div data-wide className="flex flex-col gap-4">
+      <LiveScope weeks={[weekStart]} />
       <div className="flex items-center gap-1">
         <Link
           href={`/week?d=${addDays(weekStart, -7)}`}

@@ -279,7 +279,7 @@ describe("changing the week start day", () => {
     expect(await find("Onion", "2026-10-12")).toMatchObject({ checked: true });
     expect(events).toContainEqual({ type: "grocery.updated", weekStart: "2026-10-12" });
 
-    // Saving without changing the day touches nothing.
+    // Saving without changing the day leaves grocery state alone.
     events = [];
     await updateHouseholdSettings(
       db(),
@@ -287,7 +287,7 @@ describe("changing the week start day", () => {
       { name: "Renamed", timezone: "America/New_York", weekStartDay: 1, defaultServings: 4 },
       NOW,
     );
-    expect(events).toEqual([]);
+    expect(events).toEqual([{ type: "household.updated" }]);
   });
 });
 
