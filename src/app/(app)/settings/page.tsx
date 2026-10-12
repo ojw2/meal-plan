@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ActionForm } from "@/components/action-form";
 import { SelectField, TextField } from "@/components/field";
 import { TimezoneSelect } from "@/components/timezone-select";
+import { WeekStartSelect } from "@/components/week-start-select";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDb } from "@/db";
@@ -56,12 +57,7 @@ export default async function SettingsPage() {
           <ActionForm action={saveHouseholdAction} submitLabel="Save household">
             <TextField label="Household name" name="name" required defaultValue={household.name} />
             <TimezoneSelect defaultValue={household.timezone} />
-            <SelectField
-              label="Week starts on"
-              name="weekStartDay"
-              defaultValue={String(household.weekStartDay)}
-              options={WEEKDAYS.map((d, i) => ({ value: String(i), label: d }))}
-            />
+            <WeekStartSelect saved={household.weekStartDay} />
             <TextField
               label="Default servings"
               name="defaultServings"
