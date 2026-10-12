@@ -1,0 +1,1064 @@
+{
+ "_comment": "Fixture corpus for SPOONACULAR_LIVE unset. Recipe-information shape; the fixture transport derives complexSearch pages from it. Hand-written, not real Spoonacular data.",
+ "recipes": [
+  {
+   "id": 900001,
+   "title": "Lemon Garlic Chicken Thighs",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 30,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/lemon-garlic-chicken-thighs",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10000,
+     "name": "chicken thighs",
+     "original": "2 lb bone-in chicken thighs"
+    },
+    {
+     "id": 10007,
+     "name": "lemon",
+     "original": "2 lemons"
+    },
+    {
+     "id": 10014,
+     "name": "garlic",
+     "original": "6 cloves garlic, minced"
+    },
+    {
+     "id": 10021,
+     "name": "olive oil",
+     "original": "2 tbsp olive oil"
+    },
+    {
+     "id": 10028,
+     "name": "salt",
+     "original": "1 tsp salt"
+    }
+   ]
+  },
+  {
+   "id": 900002,
+   "title": "Chicken Fajitas",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 25,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/chicken-fajitas",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10035,
+     "name": "chicken breast",
+     "original": "1.5 lb chicken breast, sliced"
+    },
+    {
+     "id": 10042,
+     "name": "bell pepper",
+     "original": "2 bell peppers, sliced"
+    },
+    {
+     "id": 10049,
+     "name": "onion",
+     "original": "1 onion, sliced"
+    },
+    {
+     "id": 10056,
+     "name": "flour tortillas",
+     "original": "8 flour tortillas"
+    },
+    {
+     "id": 10063,
+     "name": "chili powder",
+     "original": "2 tsp chili powder"
+    }
+   ]
+  },
+  {
+   "id": 900003,
+   "title": "Honey Soy Chicken Stir-Fry",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 20,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/honey-soy-chicken-stir-fry",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10035,
+     "name": "chicken breast",
+     "original": "1 lb chicken breast, cubed"
+    },
+    {
+     "id": 10070,
+     "name": "soy sauce",
+     "original": "3 tbsp soy sauce"
+    },
+    {
+     "id": 10077,
+     "name": "honey",
+     "original": "2 tbsp honey"
+    },
+    {
+     "id": 10084,
+     "name": "snap peas",
+     "original": "2 cups snap peas"
+    },
+    {
+     "id": 10091,
+     "name": "vegetable oil",
+     "original": "1 tbsp vegetable oil"
+    }
+   ]
+  },
+  {
+   "id": 900004,
+   "title": "Chicken Parmesan",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 45,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/chicken-parmesan",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10035,
+     "name": "chicken breast",
+     "original": "4 chicken breasts"
+    },
+    {
+     "id": 10098,
+     "name": "breadcrumbs",
+     "original": "1 cup breadcrumbs"
+    },
+    {
+     "id": 10105,
+     "name": "marinara sauce",
+     "original": "2 cups marinara sauce"
+    },
+    {
+     "id": 10112,
+     "name": "mozzarella",
+     "original": "1 cup shredded mozzarella"
+    },
+    {
+     "id": 10119,
+     "name": "parmesan",
+     "original": "1/2 cup grated parmesan"
+    }
+   ]
+  },
+  {
+   "id": 900005,
+   "title": "One-Pan Chicken and Rice",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 40,
+   "servings": 6,
+   "sourceUrl": "https://example.com/recipes/one-pan-chicken-and-rice",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10000,
+     "name": "chicken thighs",
+     "original": "2 lb chicken thighs"
+    },
+    {
+     "id": 10126,
+     "name": "rice",
+     "original": "1.5 cups long grain rice"
+    },
+    {
+     "id": 10133,
+     "name": "chicken broth",
+     "original": "3 cups chicken broth"
+    },
+    {
+     "id": 10049,
+     "name": "onion",
+     "original": "1 onion, diced"
+    },
+    {
+     "id": 10140,
+     "name": "paprika",
+     "original": "1 tsp paprika"
+    }
+   ]
+  },
+  {
+   "id": 900006,
+   "title": "Chicken Tikka Masala",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 55,
+   "servings": 6,
+   "sourceUrl": "https://example.com/recipes/chicken-tikka-masala",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10000,
+     "name": "chicken thighs",
+     "original": "2 lb chicken thighs, cubed"
+    },
+    {
+     "id": 10147,
+     "name": "yogurt",
+     "original": "1 cup plain yogurt"
+    },
+    {
+     "id": 10154,
+     "name": "crushed tomatoes",
+     "original": "1 can crushed tomatoes"
+    },
+    {
+     "id": 10161,
+     "name": "heavy cream",
+     "original": "1 cup heavy cream"
+    },
+    {
+     "id": 10168,
+     "name": "garam masala",
+     "original": "2 tbsp garam masala"
+    }
+   ]
+  },
+  {
+   "id": 900007,
+   "title": "Sheet-Pan Chicken Sausage and Peppers",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 30,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/sheet-pan-chicken-sausage-and-peppers",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10175,
+     "name": "chicken sausage",
+     "original": "12 oz chicken sausage, sliced"
+    },
+    {
+     "id": 10042,
+     "name": "bell pepper",
+     "original": "3 bell peppers"
+    },
+    {
+     "id": 10182,
+     "name": "red onion",
+     "original": "1 red onion"
+    },
+    {
+     "id": 10021,
+     "name": "olive oil",
+     "original": "2 tbsp olive oil"
+    }
+   ]
+  },
+  {
+   "id": 900008,
+   "title": "Grilled Chicken Caesar Wraps",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 15,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/grilled-chicken-caesar-wraps",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10035,
+     "name": "chicken breast",
+     "original": "1 lb grilled chicken breast"
+    },
+    {
+     "id": 10189,
+     "name": "romaine lettuce",
+     "original": "1 head romaine lettuce"
+    },
+    {
+     "id": 10196,
+     "name": "caesar dressing",
+     "original": "1/2 cup caesar dressing"
+    },
+    {
+     "id": 10056,
+     "name": "flour tortillas",
+     "original": "4 large tortillas"
+    }
+   ]
+  },
+  {
+   "id": 900009,
+   "title": "Beef Tacos",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 20,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/beef-tacos",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10203,
+     "name": "ground beef",
+     "original": "1 lb ground beef"
+    },
+    {
+     "id": 10210,
+     "name": "taco seasoning",
+     "original": "1 packet taco seasoning"
+    },
+    {
+     "id": 10217,
+     "name": "taco shells",
+     "original": "8 taco shells"
+    },
+    {
+     "id": 10224,
+     "name": "cheddar",
+     "original": "1 cup shredded cheddar"
+    },
+    {
+     "id": 10231,
+     "name": "tomato",
+     "original": "1 tomato, diced"
+    }
+   ]
+  },
+  {
+   "id": 900010,
+   "title": "Beef and Broccoli",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 25,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/beef-and-broccoli",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10238,
+     "name": "flank steak",
+     "original": "1 lb flank steak, sliced"
+    },
+    {
+     "id": 10245,
+     "name": "broccoli",
+     "original": "4 cups broccoli florets"
+    },
+    {
+     "id": 10070,
+     "name": "soy sauce",
+     "original": "1/3 cup soy sauce"
+    },
+    {
+     "id": 10252,
+     "name": "cornstarch",
+     "original": "1 tbsp cornstarch"
+    }
+   ]
+  },
+  {
+   "id": 900011,
+   "title": "Classic Meatloaf",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 75,
+   "servings": 6,
+   "sourceUrl": "https://example.com/recipes/classic-meatloaf",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10203,
+     "name": "ground beef",
+     "original": "2 lb ground beef"
+    },
+    {
+     "id": 10098,
+     "name": "breadcrumbs",
+     "original": "1 cup breadcrumbs"
+    },
+    {
+     "id": 10259,
+     "name": "eggs",
+     "original": "2 eggs"
+    },
+    {
+     "id": 10266,
+     "name": "ketchup",
+     "original": "1/2 cup ketchup"
+    }
+   ]
+  },
+  {
+   "id": 900012,
+   "title": "Maple Glazed Salmon",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 20,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/maple-glazed-salmon",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10273,
+     "name": "salmon",
+     "original": "4 salmon fillets"
+    },
+    {
+     "id": 10280,
+     "name": "maple syrup",
+     "original": "1/4 cup maple syrup"
+    },
+    {
+     "id": 10070,
+     "name": "soy sauce",
+     "original": "2 tbsp soy sauce"
+    },
+    {
+     "id": 10014,
+     "name": "garlic",
+     "original": "2 cloves garlic"
+    }
+   ]
+  },
+  {
+   "id": 900013,
+   "title": "Salmon Teriyaki Bowls",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 30,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/salmon-teriyaki-bowls",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10273,
+     "name": "salmon",
+     "original": "1 lb salmon fillets"
+    },
+    {
+     "id": 10287,
+     "name": "teriyaki sauce",
+     "original": "1/2 cup teriyaki sauce"
+    },
+    {
+     "id": 10126,
+     "name": "rice",
+     "original": "2 cups cooked rice"
+    },
+    {
+     "id": 10294,
+     "name": "cucumber",
+     "original": "1 cucumber"
+    }
+   ]
+  },
+  {
+   "id": 900014,
+   "title": "Crispy Tofu Stir-Fry",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 25,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/crispy-tofu-stir-fry",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10301,
+     "name": "tofu",
+     "original": "14 oz extra-firm tofu"
+    },
+    {
+     "id": 10252,
+     "name": "cornstarch",
+     "original": "2 tbsp cornstarch"
+    },
+    {
+     "id": 10308,
+     "name": "mixed vegetables",
+     "original": "3 cups mixed vegetables"
+    },
+    {
+     "id": 10070,
+     "name": "soy sauce",
+     "original": "3 tbsp soy sauce"
+    }
+   ]
+  },
+  {
+   "id": 900015,
+   "title": "Baked Sesame Tofu",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 40,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/baked-sesame-tofu",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10301,
+     "name": "tofu",
+     "original": "14 oz extra-firm tofu, cubed"
+    },
+    {
+     "id": 10315,
+     "name": "sesame oil",
+     "original": "2 tbsp sesame oil"
+    },
+    {
+     "id": 10322,
+     "name": "sesame seeds",
+     "original": "1 tbsp sesame seeds"
+    },
+    {
+     "id": 10070,
+     "name": "soy sauce",
+     "original": "2 tbsp soy sauce"
+    }
+   ]
+  },
+  {
+   "id": 900016,
+   "title": "Tofu-Style Crispy Cauliflower Bites",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 30,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/tofu-style-crispy-cauliflower-bites",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10329,
+     "name": "cauliflower",
+     "original": "1 head cauliflower"
+    },
+    {
+     "id": 10336,
+     "name": "flour",
+     "original": "1/2 cup flour"
+    },
+    {
+     "id": 10343,
+     "name": "buffalo sauce",
+     "original": "1/2 cup buffalo sauce"
+    }
+   ]
+  },
+  {
+   "id": 900017,
+   "title": "Pork Chops with Apples",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 35,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/pork-chops-with-apples",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10350,
+     "name": "pork chops",
+     "original": "4 bone-in pork chops"
+    },
+    {
+     "id": 10357,
+     "name": "apple",
+     "original": "2 apples, sliced"
+    },
+    {
+     "id": 10049,
+     "name": "onion",
+     "original": "1 onion, sliced"
+    },
+    {
+     "id": 10364,
+     "name": "apple cider",
+     "original": "1/2 cup apple cider"
+    }
+   ]
+  },
+  {
+   "id": 900018,
+   "title": "Garlic Butter Shrimp Pasta",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 20,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/garlic-butter-shrimp-pasta",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "lunch",
+    "main course",
+    "main dish",
+    "dinner"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10371,
+     "name": "shrimp",
+     "original": "1 lb shrimp, peeled"
+    },
+    {
+     "id": 10378,
+     "name": "linguine",
+     "original": "12 oz linguine"
+    },
+    {
+     "id": 10385,
+     "name": "butter",
+     "original": "4 tbsp butter"
+    },
+    {
+     "id": 10014,
+     "name": "garlic",
+     "original": "6 cloves garlic"
+    }
+   ]
+  },
+  {
+   "id": 900101,
+   "title": "Roasted Broccoli",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 20,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/roasted-broccoli",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "side dish"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10245,
+     "name": "broccoli",
+     "original": "1.5 lb broccoli florets"
+    },
+    {
+     "id": 10021,
+     "name": "olive oil",
+     "original": "2 tbsp olive oil"
+    },
+    {
+     "id": 10028,
+     "name": "salt",
+     "original": "1/2 tsp salt"
+    }
+   ]
+  },
+  {
+   "id": 900102,
+   "title": "Garlic Parmesan Broccoli",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 15,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/garlic-parmesan-broccoli",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "side dish"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10245,
+     "name": "broccoli",
+     "original": "1 lb broccoli"
+    },
+    {
+     "id": 10014,
+     "name": "garlic",
+     "original": "3 cloves garlic"
+    },
+    {
+     "id": 10119,
+     "name": "parmesan",
+     "original": "1/4 cup grated parmesan"
+    }
+   ]
+  },
+  {
+   "id": 900103,
+   "title": "Broccoli Salad",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 15,
+   "servings": 6,
+   "sourceUrl": "https://example.com/recipes/broccoli-salad",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "side dish"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10245,
+     "name": "broccoli",
+     "original": "4 cups broccoli florets"
+    },
+    {
+     "id": 10392,
+     "name": "mayonnaise",
+     "original": "1/2 cup mayonnaise"
+    },
+    {
+     "id": 10399,
+     "name": "dried cranberries",
+     "original": "1/4 cup dried cranberries"
+    },
+    {
+     "id": 10406,
+     "name": "bacon",
+     "original": "4 slices bacon"
+    }
+   ]
+  },
+  {
+   "id": 900104,
+   "title": "Steamed Broccoli with Lemon",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 10,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/steamed-broccoli-with-lemon",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "side dish"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10245,
+     "name": "broccoli",
+     "original": "1 lb broccoli"
+    },
+    {
+     "id": 10007,
+     "name": "lemon",
+     "original": "1 lemon"
+    }
+   ]
+  },
+  {
+   "id": 900105,
+   "title": "Cilantro Lime Rice",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 25,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/cilantro-lime-rice",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "side dish"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10126,
+     "name": "rice",
+     "original": "1 cup long grain rice"
+    },
+    {
+     "id": 10413,
+     "name": "lime",
+     "original": "1 lime"
+    },
+    {
+     "id": 10420,
+     "name": "cilantro",
+     "original": "1/4 cup chopped cilantro"
+    }
+   ]
+  },
+  {
+   "id": 900106,
+   "title": "Coconut Rice",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 30,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/coconut-rice",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "side dish"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10126,
+     "name": "rice",
+     "original": "1.5 cups jasmine rice"
+    },
+    {
+     "id": 10427,
+     "name": "coconut milk",
+     "original": "1 can coconut milk"
+    },
+    {
+     "id": 10028,
+     "name": "salt",
+     "original": "1/2 tsp salt"
+    }
+   ]
+  },
+  {
+   "id": 900107,
+   "title": "Mexican Rice",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 35,
+   "servings": 6,
+   "sourceUrl": "https://example.com/recipes/mexican-rice",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "side dish"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10126,
+     "name": "rice",
+     "original": "1.5 cups long grain rice"
+    },
+    {
+     "id": 10434,
+     "name": "tomato sauce",
+     "original": "1 cup tomato sauce"
+    },
+    {
+     "id": 10133,
+     "name": "chicken broth",
+     "original": "2 cups chicken broth"
+    },
+    {
+     "id": 10049,
+     "name": "onion",
+     "original": "1/2 onion, diced"
+    }
+   ]
+  },
+  {
+   "id": 900108,
+   "title": "Crispy Roasted Potatoes",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 45,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/crispy-roasted-potatoes",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "side dish"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10441,
+     "name": "potatoes",
+     "original": "2 lb yukon gold potatoes"
+    },
+    {
+     "id": 10021,
+     "name": "olive oil",
+     "original": "3 tbsp olive oil"
+    },
+    {
+     "id": 10448,
+     "name": "rosemary",
+     "original": "1 tsp rosemary"
+    }
+   ]
+  },
+  {
+   "id": 900109,
+   "title": "Garlic Mashed Potatoes",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 30,
+   "servings": 6,
+   "sourceUrl": "https://example.com/recipes/garlic-mashed-potatoes",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "side dish"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10441,
+     "name": "potatoes",
+     "original": "3 lb russet potatoes"
+    },
+    {
+     "id": 10385,
+     "name": "butter",
+     "original": "1/2 cup butter"
+    },
+    {
+     "id": 10455,
+     "name": "milk",
+     "original": "1 cup milk"
+    },
+    {
+     "id": 10014,
+     "name": "garlic",
+     "original": "4 cloves garlic"
+    }
+   ]
+  },
+  {
+   "id": 900110,
+   "title": "Classic Potato Salad",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 40,
+   "servings": 8,
+   "sourceUrl": "https://example.com/recipes/classic-potato-salad",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "side dish"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10441,
+     "name": "potatoes",
+     "original": "3 lb red potatoes"
+    },
+    {
+     "id": 10392,
+     "name": "mayonnaise",
+     "original": "1 cup mayonnaise"
+    },
+    {
+     "id": 10462,
+     "name": "celery",
+     "original": "2 celery stalks"
+    },
+    {
+     "id": 10259,
+     "name": "eggs",
+     "original": "3 eggs"
+    }
+   ]
+  },
+  {
+   "id": 900111,
+   "title": "Roasted Asparagus",
+   "image": null,
+   "imageType": "jpg",
+   "readyInMinutes": 15,
+   "servings": 4,
+   "sourceUrl": "https://example.com/recipes/roasted-asparagus",
+   "sourceName": "Example Kitchen",
+   "dishTypes": [
+    "side dish"
+   ],
+   "extendedIngredients": [
+    {
+     "id": 10469,
+     "name": "asparagus",
+     "original": "1 lb asparagus"
+    },
+    {
+     "id": 10021,
+     "name": "olive oil",
+     "original": "1 tbsp olive oil"
+    },
+    {
+     "id": 10007,
+     "name": "lemon",
+     "original": "1 lemon"
+    }
+   ]
+  }
+ ]
+}
