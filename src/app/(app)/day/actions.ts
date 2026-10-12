@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getDb } from "@/db";
 import { requireUser } from "@/lib/auth/dal";
+import { ServiceError } from "@/lib/errors";
 import { formString, toFormState, type FormState } from "@/lib/form-state";
 import {
   addManualDish,
@@ -13,6 +15,7 @@ import {
   unlockWeek,
   updateDinnerDetails,
 } from "@/lib/services/planner";
+import { addSuggestedDishes, type Pick } from "@/lib/services/suggest";
 
 // Every action re-reads the session and lets the service enforce the adult
 // role and the past-week lock. Home, week and day views all show dinners, so
@@ -92,4 +95,37 @@ export async function unlockWeekAction(_prev: FormState, formData: FormData): Pr
     await unlockWeek(getDb(), actor, formString(formData, "date"));
     refresh();
   });
+}
+
+/**
+ * Commits the suggest flow. `picks` carries what was chosen as JSON; each
+ * Spoonacular pick's confirmed copy comes from fields suffixed with its index.
+ */
+export async function addSuggestedDishesAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const actor = await requireUser();
+  const date = formString(formData, "date");
+  const state = await toFormState(async () => {
+    let chosen: Record<string, unknown>[];
+    try {
+      chosen = JSON.parse(formString(formData, "picks"));
+      if (!Array.isArray(chosen)) throw new Error();
+    } catch {
+      throw new ServiceError("Invalid picks.");
+    }
+    const picks = chosen.map((p, i) =>
+      p.kind === "spoonacular"
+        ? {
+            ...p,
+            ingredients: formString(formData, `ingredients-${i}`),
+            servings: formString(formData, `servings-${i}`),
+            readyInMinutes: formString(formData, `readyInMinutes-${i}`),
+            sourceUrl: formString(formData, `sourceUrl-${i}`),
+          }
+        : p,
+    ) as Pick[];
+    await addSuggestedDishes(getDb(), actor, date, picks);
+    refresh();
+  });
+  if (state?.error) return state;
+  redirect(`/day/${date}`);
 }

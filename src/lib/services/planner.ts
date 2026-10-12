@@ -172,8 +172,8 @@ async function isWeekUnlocked(db: DbOrTx, actor: SessionUser, weekStart: string)
 // ---------------------------------------------------------------------------
 // Mutations
 
-type DinnerRow = typeof dinners.$inferSelect;
-type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
+export type DinnerRow = typeof dinners.$inferSelect;
+export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
 function assertDate(date: string) {
   if (!isIsoDate(date)) throw new ServiceError("Invalid date.");
@@ -184,7 +184,7 @@ function assertDate(date: string) {
  * past-week lock, locks (creating if needed) the dinner row, marks recurring
  * instances as overridden, and publishes the change.
  */
-async function editDinner<T>(
+export async function editDinner<T>(
   db: Db,
   actor: SessionUser,
   date: string,
@@ -221,7 +221,7 @@ async function defaultCookFor(tx: DbOrTx, date: string): Promise<string | null> 
 }
 
 /** A night gaining its first dish becomes planned and gets the default cook. */
-async function markPlanned(tx: Tx, dinner: DinnerRow) {
+export async function markPlanned(tx: Tx, dinner: DinnerRow) {
   if (dinner.status === "planned") return;
   await tx
     .update(dinners)
@@ -253,9 +253,8 @@ const optionalText = (max: number, label: string) =>
     .max(max, `${label} is too long`)
     .transform((v) => v || null);
 
-export const manualDishSchema = z.object({
-  name: z.string().trim().min(1, "Dish name is required").max(120, "Dish name is too long"),
-  role: z.enum(["main", "side"], { error: "Pick main or side" }),
+/** Optional recipe details, shared by manual entry and the suggest flow's confirm step. */
+export const recipeDetailFields = {
   /** One ingredient per line. */
   ingredients: z
     .string()
@@ -283,6 +282,12 @@ export const manualDishSchema = z.object({
         .max(1440, "Ready time must be under a day")
         .nullable(),
     ),
+};
+
+export const manualDishSchema = z.object({
+  name: z.string().trim().min(1, "Dish name is required").max(120, "Dish name is too long"),
+  role: z.enum(["main", "side"], { error: "Pick main or side" }),
+  ...recipeDetailFields,
   notes: optionalText(2000, "Notes"),
   saveToLibrary: z.boolean(),
 });
@@ -330,23 +335,39 @@ export async function addManualDish(
       }
     }
 
-    const [{ next }] = await tx
-      .select({ next: sql<number>`coalesce(max(${dishes.position}) + 1, 0)::int` })
-      .from(dishes)
-      .where(eq(dishes.dinnerId, dinner.id));
-    const [row] = await tx
-      .insert(dishes)
-      .values({
-        dinnerId: dinner.id,
-        recipeId,
-        freeTextName: recipeId ? null : dish.name,
-        role: dish.role,
-        position: next,
-      })
-      .returning({ id: dishes.id });
+    const id = await appendDish(
+      tx,
+      dinner,
+      recipeId ? { recipeId, role: dish.role } : { freeTextName: dish.name, role: dish.role },
+    );
     await markPlanned(tx, dinner);
-    return row.id;
+    return id;
   });
+}
+
+/** Adds a dish after the night's existing ones. Call `markPlanned` once afterwards. */
+export async function appendDish(
+  tx: Tx,
+  dinner: DinnerRow,
+  dish: ({ recipeId: string; freeTextName?: never } | { freeTextName: string; recipeId?: never }) & {
+    role: "main" | "side";
+  },
+): Promise<string> {
+  const [{ next }] = await tx
+    .select({ next: sql<number>`coalesce(max(${dishes.position}) + 1, 0)::int` })
+    .from(dishes)
+    .where(eq(dishes.dinnerId, dinner.id));
+  const [row] = await tx
+    .insert(dishes)
+    .values({
+      dinnerId: dinner.id,
+      recipeId: dish.recipeId ?? null,
+      freeTextName: dish.freeTextName ?? null,
+      role: dish.role,
+      position: next,
+    })
+    .returning({ id: dishes.id });
+  return row.id;
 }
 
 async function dateOfDish(db: DbOrTx, dishId: string): Promise<string> {
