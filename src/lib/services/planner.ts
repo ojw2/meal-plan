@@ -40,13 +40,17 @@ export type DinnerView = {
   date: string;
   /** Nights without a row read as "unplanned". */
   status: DinnerStatus;
-  cook: { id: string; displayName: string; archived: boolean } | null;
+  /** `tone` picks the cook's color: their join order, so a household's first six people never share one. */
+  cook: { id: string; displayName: string; archived: boolean; tone: number } | null;
   cookManuallySet: boolean;
   servingsOverride: number | null;
   /** Set when the night came from a recurring rule (SPEC §4.6). */
   recurring: { ruleId: string; overridden: boolean } | null;
   dishes: DishView[];
 };
+
+/** Number of cook colors in globals.css (`--cook-0` …). */
+export const COOK_TONES = 6;
 
 function emptyDinner(date: string): DinnerView {
   return {
@@ -74,6 +78,7 @@ export async function getDinners(db: DbOrTx, from: string, to: string): Promise<
       cookId: users.id,
       cookName: users.displayName,
       cookArchivedAt: users.archivedAt,
+      cookOrder: sql<number>`(select count(*)::int from ${users} u2 where (u2.created_at, u2.id) < (${users.createdAt}, ${users.id}))`,
     })
     .from(dinners)
     .leftJoin(users, eq(users.id, dinners.cookUserId))
@@ -103,7 +108,9 @@ export async function getDinners(db: DbOrTx, from: string, to: string): Promise<
     byDate.set(r.date, {
       date: r.date,
       status: r.status,
-      cook: r.cookId ? { id: r.cookId, displayName: r.cookName!, archived: r.cookArchivedAt !== null } : null,
+      cook: r.cookId
+        ? { id: r.cookId, displayName: r.cookName!, archived: r.cookArchivedAt !== null, tone: r.cookOrder % COOK_TONES }
+        : null,
       cookManuallySet: r.cookManuallySet,
       servingsOverride: r.servingsOverride,
       recurring: r.recurringRuleId ? { ruleId: r.recurringRuleId, overridden: r.overridden } : null,

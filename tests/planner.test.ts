@@ -8,6 +8,7 @@ import { archiveMember } from "@/lib/services/members";
 import {
   addManualDish,
   getDinner,
+  getDinners,
   getWeek,
   moveDish,
   removeDish,
@@ -195,6 +196,22 @@ describe("cooks", () => {
     expect((await getDinner(db(), TUESDAY)).cook?.id).toBe(bo.id);
   });
 
+  it("each cook keeps their own color, by the order they joined", async () => {
+    const alex = await seedUser({ username: "alex" });
+    const bo = await seedUser({ username: "bo" });
+    await seedUser({ username: "sam", role: "kid" });
+    const cy = await seedUser({ username: "cy" });
+    await addManualDish(db(), alex, TUESDAY, dish(), NOW);
+    await addManualDish(db(), alex, "2026-10-14", dish(), NOW);
+    await addManualDish(db(), alex, "2026-10-15", dish(), NOW);
+    await updateDinnerDetails(db(), alex, TUESDAY, { cookUserId: alex.id, servingsOverride: null }, NOW);
+    await updateDinnerDetails(db(), alex, "2026-10-14", { cookUserId: bo.id, servingsOverride: null }, NOW);
+    await updateDinnerDetails(db(), alex, "2026-10-15", { cookUserId: cy.id, servingsOverride: null }, NOW);
+    const tones = (await getDinners(db(), TUESDAY, "2026-10-15")).map((d) => d.cook?.tone);
+    // Kids count toward the order too, so a member's color never shifts when someone joins.
+    expect(tones).toEqual([0, 1, 3]);
+  });
+
   it("only active adults can cook, and only on planned nights", async () => {
     const alex = await seedUser({ username: "alex" });
     const kid = await seedUser({ username: "sam", role: "kid" });
@@ -219,7 +236,7 @@ describe("cooks", () => {
 
     await archiveMember(db(), alex, bo.id, NOW);
     expect(await cookOf(past)).toBe(bo.id);
-    expect((await getDinner(db(), "2026-10-01")).cook).toEqual({ id: bo.id, displayName: "Bo", archived: true });
+    expect((await getDinner(db(), "2026-10-01")).cook).toEqual({ id: bo.id, displayName: "Bo", archived: true, tone: 1 });
     expect(await getDinner(db(), TUESDAY)).toMatchObject({ cook: null, cookManuallySet: false });
   });
 });
