@@ -278,11 +278,14 @@ function AddDish({ date, hasDishes }: { date: string; hasDishes: boolean }) {
           </Link>
         </div>
         <p className="text-sm text-muted-foreground">Or type in what you&apos;re making:</p>
-        {/* Keyed so the role default switches to "side" once the night has a dish. */}
-        <ActionForm key={String(hasDishes)} action={addManualDishAction} submitLabel="Add dish" resetOnSuccess>
+        <ActionForm action={addManualDishAction} submitLabel="Add dish" resetOnSuccess>
           <input type="hidden" name="date" value={date} />
           <TextField label="Dish name" name="name" required maxLength={120} autoComplete="off" />
           <SelectField
+            // Keyed so the default switches to "side" once the night has a dish.
+            // Only this field remounts, so a dish being typed survives another
+            // adult's change arriving (SPEC §5).
+            key={String(hasDishes)}
             label="Role"
             name="role"
             // The first dish is usually the main; later ones are usually sides.

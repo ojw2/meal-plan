@@ -58,6 +58,25 @@ test("plan changes appear on other screens, including a kid's", async ({ page, b
   await kid.context().close();
 });
 
+test("a refetch keeps what the other adult is typing", async ({ page, browser }) => {
+  const date = addDays(WEEK, 3);
+  await signInOk(page, "alex", "password123");
+  await page.goto(`/day/${date}`);
+  await live(page);
+  const form = page.locator("form").filter({ has: page.getByRole("button", { name: "Add dish" }) });
+  await form.getByLabel("Dish name").fill("Half-typed dish");
+
+  const other = await secondPhone(browser);
+  await signInOk(other, "alex", "password123");
+  await other.goto(`/day/${date}`);
+  await addDish(other, "Paella");
+
+  await expect(page.getByRole("list", { name: "Dishes" }).getByText("Paella", { exact: true })).toBeVisible(SYNC);
+  await expect(form.getByLabel("Dish name")).toHaveValue("Half-typed dish");
+
+  await other.context().close();
+});
+
 test("a phone that lost its connection catches up after reconnecting", async ({ page, browser }) => {
   const other = await secondPhone(browser);
   await signInOk(other, "alex", "password123");

@@ -51,7 +51,10 @@ export async function live(page: Page) {
 export async function addDish(page: Page, name: string, ingredients?: string) {
   const form = page.locator("form").filter({ has: page.getByRole("button", { name: "Add dish" }) });
   await form.getByLabel("Dish name").fill(name);
-  await form.getByText("Ingredients and details").click();
+  // Stays open after a previous add.
+  if (!(await form.locator("details").evaluate((d: HTMLDetailsElement) => d.open))) {
+    await form.getByText("Ingredients and details").click();
+  }
   if (ingredients) await form.getByLabel("Ingredients").fill(ingredients);
   await form.getByLabel("Save to library").uncheck();
   await form.getByRole("button", { name: "Add dish" }).click();
