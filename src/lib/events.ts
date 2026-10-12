@@ -1,0 +1,29 @@
+import { EventEmitter } from "node:events";
+import { weekStartOf } from "@/lib/time";
+
+/**
+ * In-process event bus (SPEC §5). Every mutation publishes the week it
+ * touched; the SSE route (Milestone 6) relays these to connected clients.
+ */
+export type AppEvent = { type: "dinner.updated"; date: string; weekStart: string };
+
+// One emitter across dev hot reloads.
+const globalForEvents = globalThis as unknown as { __events?: EventEmitter };
+const emitter = (globalForEvents.__events ??= new EventEmitter().setMaxListeners(0));
+
+export function publish(event: AppEvent): void {
+  emitter.emit("event", event);
+}
+
+/** Returns an unsubscribe function. */
+export function subscribe(listener: (event: AppEvent) => void): () => void {
+  emitter.on("event", listener);
+  return () => emitter.off("event", listener);
+}
+
+/** Publishes one `dinner.updated` per changed date. */
+export function publishDinnerDates(dates: Iterable<string>, weekStartDay: number): void {
+  for (const date of new Set(dates)) {
+    publish({ type: "dinner.updated", date, weekStart: weekStartOf(date, weekStartDay) });
+  }
+}

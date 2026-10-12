@@ -12,6 +12,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           <Link href="/" className="mr-auto py-2 font-semibold">
             Meal Plan
           </Link>
+          <Link href="/week" className={buttonVariants({ variant: "ghost" })}>
+            Week
+          </Link>
           {user.role === "adult" && (
             <Link href="/settings" className={buttonVariants({ variant: "ghost" })}>
               Settings
@@ -24,7 +27,8 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </form>
         </nav>
       </header>
-      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6">{children}</main>
+      {/* Pages opt into a wider desktop layout (e.g. the week grid) with a data-wide child. */}
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 lg:has-data-wide:max-w-6xl">{children}</main>
     </>
   );
 }

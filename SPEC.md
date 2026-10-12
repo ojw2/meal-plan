@@ -67,11 +67,11 @@ RecipeIngredient
 
 Dinner
   id, date (unique), status: planned|eat_out|leftovers|unplanned,
+  cookUserId?, cookManuallySet (bool),   -- one cook per night; only when planned
   servingsOverride?, recurringRuleId?, overridden (bool), notes?
 
 Dish
-  id, dinnerId, recipeId? , freeTextName?, role: main|side,
-  cookUserId?, cookManuallySet (bool), position
+  id, dinnerId, recipeId? , freeTextName?, role: main|side, position
   -- exactly one of recipeId / freeTextName
 
 RecurringRule
@@ -97,10 +97,11 @@ ApiUsage
 - `eat_out` / `leftovers`: no dishes and **no cook**. The night counts toward no one's load, and the default cook is cleared for that night.
 
 ### Dishes and cooks
-- One dinner can have multiple dishes (typically one main plus sides). **cooks are per day only 1 cook per day**
-- When a dish is created, its cook defaults to `CookSchedule[weekday]`. Any adult can change it, which sets `cookManuallySet = true`.
-- If the cook schedule changes, future dishes with `cookManuallySet = false` are updated. Past dinners and manually set cooks are left alone.
-- The home card shows the distinct set of cooks across a dinner's dishes.
+- One dinner can have multiple dishes (typically one main plus sides). **There is one cook per night**, stored on the `Dinner`, not on each dish.
+- When a night becomes `planned` (its first dish is added), its cook defaults to `CookSchedule[weekday]`. Any adult can change it, which sets `cookManuallySet = true`. "Use default cook" clears the flag and re-applies the schedule.
+- If the cook schedule changes, future planned nights with `cookManuallySet = false` are updated. Past dinners and manually set cooks are left alone.
+- Removing a night's last dish returns it to `unplanned` and clears its cook.
+- The home card shows the night's cook.
 
 ## 4. Feature specs
 
@@ -108,13 +109,13 @@ ApiUsage
 - A hero card for **tonight**: dish names, images, the cook(s), ready time, and a link to each recipe's source.
   - If tonight is `eat_out` or `leftovers`, the card says so. If it's `unplanned`, adults see a "Plan tonight" call to action.
 - Below the hero card are the remaining days of the current week as compact day cards.
-- A banner appears if the **current or next week** has unplanned nights or unassigned dishes ("Next week: 3 nights unplanned, 1 dish without a cook").
+- A banner appears if the **current or next week** has unplanned nights or planned nights without a cook ("Next week: 3 nights unplanned, 1 night without a cook"). Only nights from today on are counted.
 - "Tonight" is computed in the household time zone.
 
 ### 4.2 Week view
 - Mobile: a vertical list of 7 day cards, starting on the household's `weekStartDay`. Desktop (≥1024px): a 7-column grid.
 - Previous/next week navigation, plus a "Today" jump.
-- Tapping a day opens the **day editor**: add a dish (Suggest, Manual, or From library), reorder or remove dishes, set each dish's cook, set the servings override, or mark the night Eat out / Leftovers.
+- Tapping a day opens the **day editor**: add a dish (Suggest, Manual, or From library), reorder or remove dishes, set the night's cook, set the servings override, or mark the night Eat out / Leftovers.
 - Week actions (adults only): **Copy last week**, **Grocery list**.
 
 ### 4.3 Suggest flow (Spoonacular)
@@ -283,6 +284,15 @@ Relaxation steps stop as soon as 3 results are collected. The time budget applie
 10. **Resetting a password or PIN signs that member out everywhere**, except when you reset your own.
 11. **Attempts during a lockout are neither checked nor counted.** A 4-digit PIN therefore allows at most about 480 guesses a day. This is acceptable for a tailnet-only app.
 12. **Sessions are opaque random tokens.** Only their HMAC (keyed with `SESSION_SECRET`) is stored. The rolling 90-day expiry lives in the database, and the cookie itself is long-lived.
+
+**Added during Milestone 2:**
+
+13. **One cook per night.** The cook moved from `Dish` to `Dinner` (`cookUserId`, `cookManuallySet`). A database check allows a cook only on `planned` nights.
+14. **"Save to library" off.** A dish with only a name is stored as free text. A dish with ingredients, a link, a ready time or notes gets a recipe that is archived immediately, so it stays out of the library and pickers but still feeds the grocery list.
+15. **Marking a night Eat out / Leftovers removes its dishes** after a confirmation dialog that says how many will be removed. "Plan a dinner instead" returns the night to unplanned.
+16. **Past-week unlocks are tied to the login session** (`week_unlocks` table, deleted with the session) and are logged to `audit_log` once per session and week. Signing out re-locks the week.
+17. **Manual ingredients are stored as raw lines for now.** Spoonacular parsing arrives with the suggest flow and grocery list (Milestones 3 and 5).
+18. **The "this week / next week" banner is shown to adults only**, since kids can't act on it.
 
 ## 10. Risks and open questions
 - **Spoonacular ToS:** the free tier limits caching (around 1 hour). Persisting chosen recipes to the library may exceed what's allowed, even for private non-commercial use. **Action:** read the current terms before building §4.5. A fallback is to store only `spoonacularId`, title and the user's own copy of the ingredients.

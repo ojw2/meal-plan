@@ -74,6 +74,7 @@ describe("sessions", () => {
       displayName: "Alex",
       username: "alex",
       role: "adult",
+      sessionId: hashToken(token),
     });
   });
 

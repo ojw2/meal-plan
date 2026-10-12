@@ -14,7 +14,7 @@ import {
   restoreMember,
   updateMemberProfile,
 } from "@/lib/services/members";
-import { cookOf, db, resetDb, seedDish, seedHousehold, seedUser } from "./helpers/db";
+import { cookOf, db, resetDb, seedDinner, seedHousehold, seedUser } from "./helpers/db";
 
 const NOW = new Date("2026-10-12T16:00:00Z"); // Monday in New York
 
@@ -72,14 +72,14 @@ describe("archiveMember", () => {
     await expect(archiveMember(db(), alex, alex.id, NOW)).rejects.toThrow("at least one active adult");
   });
 
-  it("keeps history, unassigns upcoming dishes, clears schedule, and signs them out", async () => {
+  it("keeps history, unassigns upcoming nights, clears schedule, and signs them out", async () => {
     const alex = await seedUser({ username: "alex" });
     const bo = await seedUser({ username: "bo" });
     await setCookSchedule(db(), alex, { 2: bo.id, 4: alex.id }, NOW);
-    const past = await seedDish("2026-10-10", bo.id);
-    const today = await seedDish("2026-10-12", bo.id);
-    const future = await seedDish("2026-10-20", bo.id, { cookManuallySet: true });
-    const othersDish = await seedDish("2026-10-21", alex.id);
+    const past = await seedDinner("2026-10-10", bo.id);
+    const today = await seedDinner("2026-10-12", bo.id);
+    const future = await seedDinner("2026-10-20", bo.id, { cookManuallySet: true });
+    const othersNight = await seedDinner("2026-10-21", alex.id);
     const token = await createSession(db(), bo.id);
 
     await archiveMember(db(), alex, bo.id, NOW);
@@ -87,7 +87,7 @@ describe("archiveMember", () => {
     expect(await cookOf(past)).toBe(bo.id);
     expect(await cookOf(today)).toBeNull();
     expect(await cookOf(future)).toBeNull();
-    expect(await cookOf(othersDish)).toBe(alex.id);
+    expect(await cookOf(othersNight)).toBe(alex.id);
     expect(await getCookSchedule(db())).toEqual({ 4: alex.id });
     expect(await validateSession(db(), token)).toBeNull();
     expect((await authenticate(db(), "bo", "password123")).ok).toBe(false);
@@ -117,7 +117,7 @@ describe("changeRole", () => {
     const alex = await seedUser({ username: "alex" });
     const bo = await seedUser({ username: "bo" });
     await setCookSchedule(db(), alex, { 5: bo.id }, NOW);
-    const future = await seedDish("2026-10-16", bo.id);
+    const future = await seedDinner("2026-10-16", bo.id);
 
     await changeRole(db(), alex, bo.id, "kid", "9876", NOW);
 

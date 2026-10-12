@@ -13,6 +13,8 @@ export type SessionUser = {
   displayName: string;
   username: string;
   role: "adult" | "kid";
+  /** Hash of the current session's token; scopes per-session state like week unlocks. */
+  sessionId?: string;
 };
 
 function sessionSecret(): string {
@@ -67,7 +69,13 @@ export async function validateSession(
       .where(eq(sessions.tokenHash, tokenHash));
   }
 
-  return { id: row.id, displayName: row.displayName, username: row.username, role: row.role };
+  return {
+    id: row.id,
+    displayName: row.displayName,
+    username: row.username,
+    role: row.role,
+    sessionId: tokenHash,
+  };
 }
 
 export async function deleteSession(db: DbOrTx, token: string) {

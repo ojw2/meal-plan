@@ -8,6 +8,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   real,
   smallint,
   text,
@@ -163,16 +164,27 @@ export const recurringRules = pgTable(
   (t) => [check("recurring_rules_weekday", sql`${t.weekday} between 0 and 6`)],
 );
 
-export const dinners = pgTable("dinners", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  // Local calendar date in the household timezone — never a timestamp.
-  date: date("date", { mode: "string" }).notNull().unique(),
-  status: dinnerStatusEnum("status").notNull().default("unplanned"),
-  servingsOverride: smallint("servings_override"),
-  recurringRuleId: uuid("recurring_rule_id").references(() => recurringRules.id),
-  overridden: boolean("overridden").notNull().default(false),
-  notes: text("notes"),
-});
+export const dinners = pgTable(
+  "dinners",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // Local calendar date in the household timezone — never a timestamp.
+    date: date("date", { mode: "string" }).notNull().unique(),
+    status: dinnerStatusEnum("status").notNull().default("unplanned"),
+    // One cook per night (SPEC §3). Defaults from cook_schedule.
+    cookUserId: uuid("cook_user_id").references(() => users.id),
+    cookManuallySet: boolean("cook_manually_set").notNull().default(false),
+    servingsOverride: smallint("servings_override"),
+    recurringRuleId: uuid("recurring_rule_id").references(() => recurringRules.id),
+    overridden: boolean("overridden").notNull().default(false),
+    notes: text("notes"),
+  },
+  (t) => [
+    // Only a planned night can have a cook; eat out / leftovers count toward no one.
+    check("dinners_cook_only_when_planned", sql`${t.status} = 'planned' or ${t.cookUserId} is null`),
+    check("dinners_servings_override", sql`${t.servingsOverride} between 1 and 50`),
+  ],
+);
 
 export const dishes = pgTable(
   "dishes",
@@ -184,8 +196,6 @@ export const dishes = pgTable(
     recipeId: uuid("recipe_id").references(() => recipes.id),
     freeTextName: text("free_text_name"),
     role: dishRoleEnum("role").notNull(),
-    cookUserId: uuid("cook_user_id").references(() => users.id),
-    cookManuallySet: boolean("cook_manually_set").notNull().default(false),
     position: integer("position").notNull(),
   },
   (t) => [
@@ -235,6 +245,19 @@ export const apiUsage = pgTable("api_usage", {
   pointsLeft: real("points_left"),
 });
 
+/** Past weeks a session has unlocked for editing (SPEC §4.9). Dies with the session. */
+export const weekUnlocks = pgTable(
+  "week_unlocks",
+  {
+    sessionTokenHash: text("session_token_hash")
+      .notNull()
+      .references(() => sessions.tokenHash, { onDelete: "cascade" }),
+    weekStartDate: date("week_start_date", { mode: "string" }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.sessionTokenHash, t.weekStartDate] })],
+);
+
 /** Who did what, for actions the spec says must be logged (e.g. past-week unlock). */
 export const auditLog = pgTable("audit_log", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -246,3 +269,4 @@ export const auditLog = pgTable("audit_log", {
 
 export type User = typeof users.$inferSelect;
 export type Household = typeof household.$inferSelect;
+export type DinnerStatus = (typeof dinnerStatusEnum.enumValues)[number];
