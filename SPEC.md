@@ -6,7 +6,7 @@
 
 A self-hosted, web-first app, frameworks to embed your web app as a mobile app, that one household uses to plan **dinners** for the week and assign **who cooks** each dish. Meals come from one of two places:
 
-1. **Suggest:** the user enters a protein, a cooking-time budget and optional side ingredients. The app queries Spoonacular and offers 3 main-dish options, then about 3 side-dish options for each side ingredient.
+1. **Suggest:** the user enters a protein and the ingredients to cook it with, a cooking-time budget, and optionally a side ingredient and what to cook it with. The app queries Spoonacular and offers 3 main-dish options, then 3 side-dish options. The user ends up with at most one main and one side.
 2. **Manual:** the user types what they plan to cook. Only the name is required.
 
 From the week's plan the app derives a live, aggregated, editable **grocery list**.
@@ -120,27 +120,31 @@ ApiUsage
 - Week actions (adults only): **Copy last week**, **Grocery list**.
 
 ### 4.3 Suggest flow (Spoonacular)
-**Inputs:** protein (free text with autocomplete from common proteins), max cook time (minutes; presets 15/30/45/60 plus custom), and side ingredients (0–3 chips, free text).
+**Inputs:**
+- **Main:** a protein (free text with autocomplete from common proteins, required) and the ingredients to cook it with (0–3 chips, free text, e.g. "lemon", "garlic").
+- **Side (optional):** one side ingredient (free text, e.g. "broccoli") and the ingredients to cook it with (0–3 chips). The side's chips need a side ingredient.
+- Max cook time (minutes; presets 15/30/45/60 plus custom), shared by both dishes.
 
 **Step 1: pick a main.**
-- Call `GET /recipes/complexSearch` with `includeIngredients=<protein>`, `type=main course`, `maxReadyTime=<time>`, `addRecipeInformation=true`, `fillIngredients=true`, `number=3`, `sort=popularity`.
+- Call `GET /recipes/complexSearch` with `includeIngredients=<protein>,<extras…>`, `type=main course`, `maxReadyTime=<time>`, `addRecipeInformation=true`, `fillIngredients=true`, `number=3`, `sort=popularity`.
 - Each card shows the image, title, ready time, the time-budget badge, and a source link.
 - **Show 3 more** fetches the next page (`offset += 3`) and excludes recipe IDs already shown in this session.
-- Household library recipes with `dishType=main` that match the protein and time are shown first under the label "From your recipes". They cost no API points.
+- Household library recipes with `dishType=main` that match the protein and time are shown first under the label "From your recipes", those mentioning more of the extras first. They cost no API points.
 
-**Step 2: pick sides (one row per side ingredient).**
-- For each side ingredient, call `complexSearch` with `includeIngredients=<ingredient>`, `type=side dish`, `maxReadyTime=<time>`, `number=3`.
-- Each row has its own **Show 3 more** button and a **Skip** option.
+**Step 2: pick a side (only when a side ingredient was entered).**
+- One row: call `complexSearch` with `includeIngredients=<side ingredient>,<extras…>`, `type=side dish`, `maxReadyTime=<time>`, `number=3`, with library matches first as for the main.
+- Like the main, the row has **Show 3 more** and **Skip**. At most one main and one side are picked.
 
 **Constraint relaxation.** If a search returns fewer than 3 results, the app retries with progressively relaxed constraints and labels every relaxed result with the reason:
-1. Strict.
-2. `maxReadyTime × 1.5`, then `× 2`. Badge: "35 min (over your 20 min)".
-3. Move the ingredient from `includeIngredients` to a `query` text match. Badge: "Similar to ‘tofu’".
-4. If results are still empty, show "No matches for X. Try a different protein/ingredient or add it manually."
+1. Strict: the main ingredient and all its extras.
+2. Without the extras (only when there are any). Badge: "Without lemon, garlic", naming the extras the recipe doesn't use.
+3. `maxReadyTime × 1.5`, then `× 2`. Badge: "35 min (over your 20 min)".
+4. Move the ingredient from `includeIngredients` to a `query` text match. Badge: "Similar to ‘tofu’".
+5. If results are still empty, show "No matches for X. Try a different protein/ingredient or add it manually."
 
 Relaxation steps stop as soon as 3 results are collected. The time budget applies **per dish**, on the assumption that dishes are cooked in parallel.
 
-**Commit.** After picking the main and sides, a **Review** step shows each new Spoonacular pick's ingredients, servings, ready time and link, prefilled and editable. Saving stores each chosen recipe in the household library as the household's own copy (deduplicated by `spoonacularId`; see §6), then creates `Dish` rows on that dinner with the default cook.
+**Commit.** After picking the main and side, a **Review** step shows each new Spoonacular pick's ingredients, servings, ready time and link, prefilled and editable. Saving stores each chosen recipe in the household library as the household's own copy (deduplicated by `spoonacularId`; see §6), then creates `Dish` rows on that dinner with the default cook.
 
 ### 4.4 Manual entry
 - Required: dish name and role (main or side).
@@ -298,9 +302,9 @@ Relaxation steps stop as soon as 3 results are collected. The time budget applie
 **Added during Milestone 3:**
 
 19. **Spoonacular recipes are saved as the household's own copy.** The terms allow keeping only id, title and image. The rest is prefilled in a Review step that an adult confirms or edits. Ingredient lines are stored raw and get parsed with the grocery list (Milestone 5).
-20. **Library matches appear for sides too**, not just mains, and they remain when the quota is exhausted. A recipe matches when its title or any ingredient line contains the ingredient and its ready time fits the budget (recipes with no ready time count as fitting). Up to 5 are shown, favorites first.
+20. **Library matches appear for sides too**, not just mains, and they remain when the quota is exhausted. A recipe matches when its title or any ingredient line contains the ingredient and its ready time fits the budget (recipes with no ready time count as fitting). Up to 5 are shown: those mentioning more of the extra ingredients first, then favorites. Each lists the extras it doesn't mention.
 21. **The text-match step uses the doubled time budget.** Each result's badge reflects the recipe itself: any recipe over the budget is labeled "N min (over your M min)", and any found by text match is labeled "Similar to ‘X’".
-22. **Any row can be skipped, including the main**, for example to add sides to a night that already has one. At least one dish must be picked.
+22. **Either row can be skipped, including the main**, for example to add a side to a night that already has a main. At least one dish must be picked, and at most one main and one side (decision 52).
 23. **Picking a Spoonacular recipe already in the library reuses that recipe** and skips the Review fields. If it was archived, it's restored with the newly confirmed copy.
 24. **Quota is tracked per UTC date**, because Spoonacular resets at midnight UTC. Cached pages are still served when the quota is exhausted. Searching is adults-only, since it spends quota. Expired cache rows are deleted, not just ignored.
 25. **Fixtures are a hand-written sample corpus.** No API key was available to record real responses. A fixture transport filters the corpus the way `complexSearch` would. The ingredients `quota-exhausted` and `spoonacular-down` simulate a 402 and a timeout. Production must set `SPOONACULAR_LIVE=1`.
@@ -343,9 +347,14 @@ Relaxation steps stop as soon as 3 results are collected. The time budget applie
 50. **Each cook has their own color**, used wherever their name appears on a night. The color comes from the order members joined (kids included), so it never changes when someone joins or leaves. Six colors cycle. A planned night without a cook shows "No cook" in the attention color.
 51. **Home shows the week as a strip of seven day tiles** above tonight's card, each with a dot: filled when planned, an outline when eating out or having leftovers, and orange when a night from today on still needs a dish or a cook. Unplanned nights from today on show a "Plan" button for adults on Home and the week view. The week view shows how many of the 7 nights are settled (planned, eating out or leftovers).
 
+**Added after Milestone 7:**
+
+52. **The suggest flow picks at most one main and one side**, each searched with its own ingredient plus up to 3 ingredients to cook it with. This replaces up to 3 side rows, one per ingredient. Adding more dishes to a night is still possible with manual entry or "From library".
+53. **Extra ingredients are required at first and dropped before anything else is relaxed**, so a result missing an extra still fits the time budget. A result found without the extras is badged with the ones it doesn't use ("Without lemon"), judged from its title and ingredient lines. Extras that repeat the main ingredient or each other are ignored. "Show 3 more" keeps the same extras.
+
 ## 10. Risks and open questions
 - **Spoonacular ToS:** *(reviewed in Milestone 3)* The terms allow caching for at most 1 hour and permanent storage of only the recipe id, title and image URL. The app keeps those and stores the rest as the household's own, adult-confirmed copy (§6, decision 19). This is still a grey area. If Spoonacular objects, drop the prefill and have adults type ingredients themselves.
-- **Free-tier quota (~150 points/day):** a full suggest flow with 2 sides and a couple of rerolls costs several points. Heavy planning days could exhaust the quota. Watch `ApiUsage` for the first few weeks, then decide whether the paid tier is worth it.
+- **Free-tier quota (~150 points/day):** a full suggest flow with a side and a couple of rerolls costs several points. Heavy planning days could exhaust the quota. Watch `ApiUsage` for the first few weeks, then decide whether the paid tier is worth it.
 - **iOS PWA quirks:** no notifications are planned, so the main risks are session cookie persistence and Tailscale VPN reconnect latency when the app is opened.
 - **Unit conversion quality:** Spoonacular ingredient IDs make grouping reliable, but amounts like "1 can" or "1 bunch" won't merge. This is acceptable by design.
 
