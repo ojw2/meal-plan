@@ -38,3 +38,17 @@ export function ingredientLines(r: SearchResult): string[] {
   const list = r.extendedIngredients ?? [...(r.usedIngredients ?? []), ...(r.missedIngredients ?? [])];
   return list.map((i) => (i.original ?? i.name ?? "").trim()).filter(Boolean);
 }
+
+export const parsedIngredientSchema = z.looseObject({
+  id: z.number().nullish(),
+  original: z.string().nullish(),
+  name: z.string().nullish(),
+  amount: z.number().nullish(),
+  unit: z.string().nullish(),
+  unitShort: z.string().nullish(),
+  aisle: z.string().nullish(),
+});
+
+export const parseIngredientsSchema = z.array(parsedIngredientSchema);
+
+export type ParsedIngredient = z.infer<typeof parsedIngredientSchema>;

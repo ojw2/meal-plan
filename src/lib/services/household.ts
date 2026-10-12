@@ -10,8 +10,9 @@ import {
 } from "@/lib/auth/credentials";
 import type { SessionUser } from "@/lib/auth/session";
 import { ServiceError } from "@/lib/errors";
-import { publishDinnerDates } from "@/lib/events";
+import { publish, publishDinnerDates } from "@/lib/events";
 import { isValidTimezone, localDate } from "@/lib/time";
+import { rekeyGroceryWeeks } from "./grocery";
 import { assertAdult } from "./permissions";
 
 const timezoneSchema = z
@@ -79,13 +80,25 @@ export async function setupHousehold(db: Db, input: z.infer<typeof setupSchema>)
   });
 }
 
+/**
+ * Saves household settings. Changing the week start day moves the current
+ * and future weeks' grocery check-offs and manual items to the new week
+ * boundaries (SPEC §4.8); the settings screen warns about this first.
+ */
 export async function updateHouseholdSettings(
-  db: DbOrTx,
+  db: Db,
   actor: SessionUser,
   input: z.infer<typeof householdSettingsSchema>,
+  now = new Date(),
 ) {
   assertAdult(actor);
-  await db.update(household).set(input).where(eq(household.id, 1));
+  const touched = await db.transaction(async (tx) => {
+    const [before] = await tx.select().from(household).where(eq(household.id, 1)).for("update");
+    await tx.update(household).set(input).where(eq(household.id, 1));
+    if (!before || before.weekStartDay === input.weekStartDay) return [];
+    return rekeyGroceryWeeks(tx, localDate(input.timezone, now), before.weekStartDay, input.weekStartDay);
+  });
+  for (const weekStart of touched) publish({ type: "grocery.updated", weekStart });
 }
 
 /** Weekday (0–6) → adult user id. */

@@ -251,7 +251,7 @@ describe("addSuggestedDishes", () => {
     expect((await getDinner(db(), TUESDAY)).status).toBe("unplanned");
   });
 
-  it("publishes a dinner.updated event for the night", async () => {
+  it("publishes the night's change, then the grocery list's once ingredients are parsed", async () => {
     const alex = await seedUser({ username: "alex" });
     const events: AppEvent[] = [];
     const unsubscribe = subscribe((e) => events.push(e));
@@ -260,7 +260,10 @@ describe("addSuggestedDishes", () => {
     } finally {
       unsubscribe();
     }
-    expect(events).toEqual([{ type: "dinner.updated", date: TUESDAY, weekStart: "2026-10-11" }]);
+    expect(events).toEqual([
+      { type: "dinner.updated", date: TUESDAY, weekStart: "2026-10-11" },
+      { type: "grocery.updated", weekStart: "2026-10-11" },
+    ]);
   });
 
   it("marks a search result that's already in the library", async () => {

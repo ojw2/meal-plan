@@ -5,7 +5,12 @@ import type { z } from "zod";
 import type { DbOrTx } from "@/db";
 import { apiUsage, searchCache } from "@/db/schema";
 import { defaultTransport, type Transport } from "./transport";
-import { complexSearchSchema, type ComplexSearchResponse } from "./types";
+import {
+  complexSearchSchema,
+  parseIngredientsSchema,
+  type ComplexSearchResponse,
+  type ParsedIngredient,
+} from "./types";
 
 // Every Spoonacular call goes through here (SPEC §6): responses are cached
 // for an hour, quota headers are recorded, and failures become one of two
@@ -95,12 +100,32 @@ export async function spoonacularGet<T>(
     if (hit.success) return hit.data;
   }
 
+  const body = await request(db, path, params, undefined, schema, { transport, now });
+  await db
+    .insert(searchCache)
+    .values({ queryHash: key, response: body as object, fetchedAt: now })
+    .onConflictDoUpdate({ target: searchCache.queryHash, set: { response: body as object, fetchedAt: now } });
+  return body;
+}
+
+/**
+ * One uncached request: checks the quota first, records the quota headers,
+ * and validates the response against `schema`.
+ */
+async function request<T>(
+  db: DbOrTx,
+  path: string,
+  params: URLSearchParams,
+  form: URLSearchParams | undefined,
+  schema: z.ZodType<T>,
+  { transport, now }: { transport: Transport; now: Date },
+): Promise<T> {
   // Don't spend a request we know will be refused.
   if (isQuotaExhausted(await getQuota(db, now))) throw new QuotaExhaustedError();
 
   let res;
   try {
-    res = await transport(path, params);
+    res = await transport(path, params, form);
   } catch (e) {
     console.error(`Spoonacular ${path} failed:`, e instanceof Error ? e.message : e);
     throw new SpoonacularUnavailableError();
@@ -119,14 +144,8 @@ export async function spoonacularGet<T>(
     console.error(`Unexpected Spoonacular ${path} response:`, parsed.error.issues[0]);
     throw new SpoonacularUnavailableError("Spoonacular sent an unexpected response.");
   }
-
-  await db
-    .insert(searchCache)
-    .values({ queryHash: key, response: res.body, fetchedAt: now })
-    .onConflictDoUpdate({ target: searchCache.queryHash, set: { response: res.body, fetchedAt: now } });
   return parsed.data;
 }
-
 export type ComplexSearchParams = {
   type: "main course" | "side dish";
   maxReadyTime: number;
@@ -152,4 +171,22 @@ export async function complexSearch(
   if (p.includeIngredients !== undefined) params.set("includeIngredients", p.includeIngredients);
   if (p.query !== undefined) params.set("query", p.query);
   return spoonacularGet(db, "/recipes/complexSearch", params, complexSearchSchema, opts);
+}
+
+/**
+ * `POST /recipes/parseIngredients` (SPEC §4.4): structured name, amount,
+ * unit, aisle and ingredient id for each line. Not cached: the results are
+ * stored on the household's own ingredient lines.
+ */
+export async function parseIngredients(
+  db: DbOrTx,
+  lines: string[],
+  { transport = defaultTransport(), now = new Date() }: CallOptions = {},
+): Promise<ParsedIngredient[]> {
+  // Servings only matter for nutrition, which isn't requested.
+  const form = new URLSearchParams({ ingredientList: lines.join("\n"), servings: "1", includeNutrition: "false" });
+  return request(db, "/recipes/parseIngredients", new URLSearchParams(), form, parseIngredientsSchema, {
+    transport,
+    now,
+  });
 }

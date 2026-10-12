@@ -1,4 +1,5 @@
 import corpus from "./recipes.json";
+import { parseLine } from "./parse";
 import type { SpoonacularResponse, Transport } from "../transport";
 
 /**
@@ -7,8 +8,11 @@ import type { SpoonacularResponse, Transport } from "../transport";
  * real endpoint does, so relaxation and paging behave realistically, and it
  * sends quota headers for a 150-point free tier.
  *
+ * `parseIngredients` uses a small rule-based parser (./parse.ts).
+ *
  * Two magic ingredients exercise the failure paths in dev and e2e:
- * "quota-exhausted" answers 402 and "spoonacular-down" times out.
+ * "quota-exhausted" answers 402 and "spoonacular-down" times out. In
+ * `parseIngredients`, a line containing either does the same.
  */
 
 type Fixture = (typeof corpus.recipes)[number];
@@ -30,6 +34,14 @@ function quotaHeaders(cost: number): Headers {
   });
 }
 
+const QUOTA_EXHAUSTED: SpoonacularResponse = {
+  status: 402,
+  headers: new Headers({ "content-type": "application/json" }),
+  body: { status: "failure", code: 402, message: "Your daily points limit of 150 has been reached." },
+};
+
+const timeout = () => new DOMException("The operation was aborted due to timeout", "TimeoutError");
+
 function complexSearch(params: URLSearchParams): SpoonacularResponse {
   const include = (params.get("includeIngredients") ?? "")
     .split(",")
@@ -37,16 +49,8 @@ function complexSearch(params: URLSearchParams): SpoonacularResponse {
     .filter(Boolean);
   const query = params.get("query")?.trim() ?? "";
   const terms = [...include, query];
-  if (terms.includes("quota-exhausted")) {
-    return {
-      status: 402,
-      headers: new Headers({ "content-type": "application/json" }),
-      body: { status: "failure", code: 402, message: "Your daily points limit of 150 has been reached." },
-    };
-  }
-  if (terms.includes("spoonacular-down")) {
-    throw new DOMException("The operation was aborted due to timeout", "TimeoutError");
-  }
+  if (terms.includes("quota-exhausted")) return QUOTA_EXHAUSTED;
+  if (terms.includes("spoonacular-down")) throw timeout();
 
   const type = params.get("type");
   const maxReadyTime = Number(params.get("maxReadyTime") ?? Infinity);
@@ -94,8 +98,18 @@ function toResult(r: Fixture, include: string[], withInfo: boolean, withIngredie
   };
 }
 
-export const fixtureTransport: Transport = async (path, params) => {
+function parseIngredients(form: URLSearchParams): SpoonacularResponse {
+  const lines = (form.get("ingredientList") ?? "").split("\n").filter((l) => l.trim());
+  if (lines.some((l) => l.includes("quota-exhausted"))) return QUOTA_EXHAUSTED;
+  if (lines.some((l) => l.includes("spoonacular-down"))) throw timeout();
+  // Like the real endpoint, lines it can't make sense of are left out.
+  const body = lines.flatMap((l) => parseLine(l) ?? []);
+  return { status: 200, headers: quotaHeaders(1 + lines.length * 0.5), body };
+}
+
+export const fixtureTransport: Transport = async (path, params, form) => {
   if (path === "/recipes/complexSearch") return complexSearch(params);
+  if (path === "/recipes/parseIngredients" && form) return parseIngredients(form);
   return {
     status: 404,
     headers: new Headers({ "content-type": "application/json" }),

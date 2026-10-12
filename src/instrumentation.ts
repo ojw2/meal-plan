@@ -2,7 +2,10 @@
 // "migrations run on container start").
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
-  if (process.env.RUN_MIGRATIONS === "false") return;
-  const { runMigrations } = await import("./db/migrate");
-  await runMigrations();
+  if (process.env.RUN_MIGRATIONS !== "false") {
+    const { runMigrations } = await import("./db/migrate");
+    await runMigrations();
+  }
+  const { startBackgroundJobs } = await import("./lib/jobs");
+  startBackgroundJobs();
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Copy } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, ShoppingCart } from "lucide-react";
 import { ActionButton } from "@/components/action-button";
 import { DayCard } from "@/components/planner/day-card";
 import { PastWeekBanner } from "@/components/planner/past-week-banner";
@@ -9,20 +9,10 @@ import { getDb } from "@/db";
 import { requireUser } from "@/lib/auth/dal";
 import { getWeek, plannerCalendar, weekAccess } from "@/lib/services/planner";
 import { materializeRecurring } from "@/lib/services/recurring";
-import { addDays, formatDate, isIsoDate, weekStartOf } from "@/lib/time";
+import { addDays, isIsoDate, weekLabel, weekStartOf } from "@/lib/time";
 import { copyLastWeekAction } from "../day/actions";
 
 export const metadata: Metadata = { title: "Week" };
-
-/** "Oct 11 – 17", or "Oct 25 – Nov 1" across months. */
-function weekLabel(start: string) {
-  const end = addDays(start, 6);
-  const sameMonth = start.slice(0, 7) === end.slice(0, 7);
-  return `${formatDate(start, { month: "short", day: "numeric" })} – ${formatDate(
-    end,
-    sameMonth ? { day: "numeric" } : { month: "short", day: "numeric" },
-  )}`;
-}
 
 export default async function WeekPage({ searchParams }: PageProps<"/week">) {
   const user = await requireUser();
@@ -70,13 +60,17 @@ export default async function WeekPage({ searchParams }: PageProps<"/week">) {
 
       {access.past && <PastWeekBanner date={weekStart} unlocked={access.unlocked} isAdult={user.role === "adult"} />}
 
-      {canCopy && (
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
+        {canCopy && (
           <ActionButton action={copyLastWeekAction} fields={{ date: weekStart }} toastSuccess>
             <Copy /> Copy last week
           </ActionButton>
-        </div>
-      )}
+        )}
+        {/* Kids can view the list too (SPEC §4.8). */}
+        <Link href={`/grocery?d=${weekStart}`} className={buttonVariants({ variant: "outline" })}>
+          <ShoppingCart /> Grocery list
+        </Link>
+      </div>
 
       <ol className="grid gap-3 lg:grid-cols-7" aria-label="Days">
         {week.map((dinner) => (

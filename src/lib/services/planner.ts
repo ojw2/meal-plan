@@ -17,6 +17,7 @@ import { ServiceError } from "@/lib/errors";
 import { publishDinnerDates } from "@/lib/events";
 import { addDays, isIsoDate, isPastWeek, localDate, weekdayOf, weekStartOf } from "@/lib/time";
 import { getHousehold } from "./household";
+import { parsePendingIngredients } from "./ingredients";
 import { assertAdult } from "./permissions";
 
 // ---------------------------------------------------------------------------
@@ -324,8 +325,9 @@ export async function addManualDish(
   const dish = manualDishSchema.parse(input);
   const hasDetails = dish.ingredients.length > 0 || dish.sourceUrl || dish.readyInMinutes || dish.notes;
 
-  return editDinner(db, actor, date, now, async (tx, dinner) => {
-    let recipeId: string | null = null;
+  // Assigned inside the transaction callback.
+  let recipeId = null as string | null;
+  const dishId = await editDinner(db, actor, date, now, async (tx, dinner) => {
     if (dish.saveToLibrary || hasDetails) {
       const [recipe] = await tx
         .insert(recipes)
@@ -340,7 +342,6 @@ export async function addManualDish(
         })
         .returning({ id: recipes.id });
       recipeId = recipe.id;
-      // Parsing into name/amount/unit comes with the grocery list; raw lines are kept now.
       if (dish.ingredients.length) {
         await tx
           .insert(recipeIngredients)
@@ -356,6 +357,9 @@ export async function addManualDish(
     await markPlanned(tx, dinner);
     return id;
   });
+  // After the transaction: a slow or failed API call never holds the night's lock.
+  if (recipeId) await parsePendingIngredients(db, { recipeIds: [recipeId], now });
+  return dishId;
 }
 
 /** Adds a dish after the night's existing ones. Call `markPlanned` once afterwards. */

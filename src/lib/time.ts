@@ -72,3 +72,13 @@ export function isPastWeek(weekStart: string, today: string): boolean {
 export function formatDate(date: string, options: Intl.DateTimeFormatOptions): string {
   return new Intl.DateTimeFormat("en-US", { ...options, timeZone: "UTC" }).format(toUtc(date));
 }
+
+/** "Oct 11 – 17", or "Oct 25 – Nov 1" across months. */
+export function weekLabel(start: string) {
+  const end = addDays(start, 6);
+  const sameMonth = start.slice(0, 7) === end.slice(0, 7);
+  return `${formatDate(start, { month: "short", day: "numeric" })} – ${formatDate(
+    end,
+    sameMonth ? { day: "numeric" } : { month: "short", day: "numeric" },
+  )}`;
+}
