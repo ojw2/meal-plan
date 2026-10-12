@@ -28,12 +28,19 @@ const run = (fetchPage: FetchPage, cursor = newLadderCursor(4), exclude = new Se
 describe("relaxationSteps", () => {
   it("loosens time ×1.5 then ×2, then switches to a text match", () => {
     expect(relaxationSteps(20)).toEqual([
-      { by: "include", maxReadyTime: 20 },
-      { by: "include", maxReadyTime: 30 },
-      { by: "include", maxReadyTime: 40 },
-      { by: "query", maxReadyTime: 40 },
+      { by: "include", maxReadyTime: 20, withExtras: false },
+      { by: "include", maxReadyTime: 30, withExtras: false },
+      { by: "include", maxReadyTime: 40, withExtras: false },
+      { by: "query", maxReadyTime: 40, withExtras: false },
     ]);
     expect(relaxationSteps(45)[1].maxReadyTime).toBe(68); // rounded
+  });
+
+  it("with extra ingredients, requires them first, then drops them before loosening time", () => {
+    const withExtras = relaxationSteps(20, true);
+    expect(withExtras).toHaveLength(5);
+    expect(withExtras[0]).toEqual({ by: "include", maxReadyTime: 20, withExtras: true });
+    expect(withExtras.slice(1)).toEqual(relaxationSteps(20));
   });
 });
 

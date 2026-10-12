@@ -13,6 +13,7 @@ import {
 } from "@/lib/spoonacular/client";
 import {
   collectWithRelaxation,
+  MAX_EXTRAS,
   newLadderCursor,
   PAGE_SIZE,
   relaxationSteps,
@@ -30,6 +31,7 @@ import { assertAdult } from "./permissions";
 
 const role = z.enum(["main", "side"], { error: "Pick main or side" });
 
+
 // ---------------------------------------------------------------------------
 // Search
 
@@ -41,6 +43,8 @@ export type LibraryMatch = {
   sourceUrl: string | null;
   isFavorite: boolean;
   spoonacularId: number | null;
+  /** Extra ingredients this recipe doesn't mention. */
+  missingExtras: string[];
 };
 
 export type Suggestion = {
@@ -57,20 +61,31 @@ export type Suggestion = {
   overBudget: boolean;
   /** Found by text match rather than as a required ingredient. */
   similarTo: string | null;
+  /** Extra ingredients this recipe doesn't use (found once they were dropped). */
+  missingExtras: string[];
   /** Already in the library (not archived): picking it reuses that recipe. */
   libraryRecipeId: string | null;
 };
 
+// One entry per relaxation step: 4, or 5 with extra ingredients.
 const cursorSchema = z.object({
-  offsets: z.array(z.number().int().min(0).max(10_000)).length(4),
-  done: z.array(z.boolean()).length(4),
+  offsets: z.array(z.number().int().min(0).max(10_000)).min(4).max(5),
+  done: z.array(z.boolean()).min(4).max(5),
   shownIds: z.array(z.number().int()).max(500),
 });
 export type SuggestCursor = z.infer<typeof cursorSchema>;
 
+const ingredientName = z.string().trim().min(1, "Enter an ingredient").max(60, "That ingredient is too long");
+
 export const suggestRequestSchema = z.object({
   role,
-  ingredient: z.string().trim().min(1, "Enter an ingredient").max(60, "That ingredient is too long"),
+  /** The main protein, or the side's main ingredient. Always required. */
+  ingredient: ingredientName,
+  /** Ingredients to cook it with ("lemon", "garlic"). Required at first, dropped if too few match. */
+  extras: z
+    .array(ingredientName)
+    .max(MAX_EXTRAS, `Add at most ${MAX_EXTRAS} extra ingredients`)
+    .default([]),
   maxTime: z
     .number({ error: "Pick a time budget" })
     .int("Time must be whole minutes")
@@ -95,18 +110,26 @@ export type SuggestResponse = {
 
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
 
+/** Case-insensitive "does this text mention the ingredient". */
+const mentions = (texts: string[], ingredient: string) => {
+  const needle = ingredient.toLowerCase();
+  return texts.some((t) => t.toLowerCase().includes(needle));
+};
+
 /**
  * Library recipes of the right role that mention the ingredient (in the
  * title or an ingredient line) and fit the time budget. Recipes with no
- * ready time are included. They cost no API points.
+ * ready time are included. Those mentioning more of the extras come first,
+ * then favorites. They cost no API points.
  */
 export async function libraryMatches(
   db: DbOrTx,
-  input: { role: "main" | "side"; ingredient: string; maxTime: number },
+  input: { role: "main" | "side"; ingredient: string; extras?: string[]; maxTime: number },
   limit = 5,
 ): Promise<LibraryMatch[]> {
   const pattern = `%${escapeLike(input.ingredient)}%`;
-  return db
+  const extras = input.extras ?? [];
+  const candidates = await db
     .select({
       recipeId: recipes.id,
       title: recipes.title,
@@ -139,7 +162,34 @@ export async function libraryMatches(
       ),
     )
     .orderBy(desc(recipes.isFavorite), asc(recipes.title))
-    .limit(limit);
+    // Without extras the order above is final; with them, rank a wider pool.
+    .limit(extras.length ? 50 : limit);
+  if (!extras.length) return candidates.map((c) => ({ ...c, missingExtras: [] }));
+
+  const lines = candidates.length
+    ? await db
+        .select({
+          recipeId: recipeIngredients.recipeId,
+          rawText: recipeIngredients.rawText,
+          name: recipeIngredients.name,
+        })
+        .from(recipeIngredients)
+        .where(
+          inArray(
+            recipeIngredients.recipeId,
+            candidates.map((c) => c.recipeId),
+          ),
+        )
+    : [];
+  return candidates
+    .map((c) => {
+      const own = lines.filter((l) => l.recipeId === c.recipeId);
+      const texts = [c.title, ...own.flatMap((l) => [l.rawText, l.name ?? ""])];
+      return { ...c, missingExtras: extras.filter((e) => !mentions(texts, e)) };
+    })
+    // Stable sort: keeps favorites-then-title within each group.
+    .sort((a, b) => a.missingExtras.length - b.missingExtras.length)
+    .slice(0, limit);
 }
 
 /**
@@ -155,9 +205,16 @@ export async function suggestDishes(
 ): Promise<SuggestResponse> {
   // Searching spends the household's API quota, so it's adults-only too.
   assertAdult(actor);
-  const input = suggestRequestSchema.parse(request);
+  const parsed = suggestRequestSchema.parse(request);
+  // Repeats of the main ingredient or of each other add nothing.
+  const seen = new Set([parsed.ingredient.toLowerCase()]);
+  const extras = parsed.extras.filter((e) => !seen.has(e.toLowerCase()) && seen.add(e.toLowerCase()));
+  const input = { ...parsed, extras };
   const now = opts.now ?? new Date();
-  const steps = relaxationSteps(input.maxTime);
+  const steps = relaxationSteps(input.maxTime, extras.length > 0);
+  if (input.cursor && input.cursor.offsets.length !== steps.length) {
+    throw new ServiceError("The search changed. Start it again.");
+  }
   const firstPage = !input.cursor;
   const library = firstPage ? await libraryMatches(db, input) : [];
 
@@ -178,7 +235,9 @@ export async function suggestDishes(
           maxReadyTime: step.maxReadyTime,
           offset,
           number: PAGE_SIZE,
-          ...(step.by === "include" ? { includeIngredients: input.ingredient } : { query: input.ingredient }),
+          ...(step.by === "query"
+            ? { query: input.ingredient }
+            : { includeIngredients: [input.ingredient, ...(step.withExtras ? extras : [])].join(",") }),
         },
         { ...opts, now },
       ),
@@ -210,6 +269,7 @@ export async function suggestDishes(
     ingredients: ingredientLines(r),
     overBudget: r.readyInMinutes != null && r.readyInMinutes > input.maxTime,
     similarTo: step.by === "query" ? input.ingredient : null,
+    missingExtras: step.withExtras ? [] : extras.filter((e) => !mentions([r.title, ...ingredientLines(r)], e)),
     libraryRecipeId: inLibrary.find((l) => l.spoonacularId === r.id)?.id ?? null,
   }));
 
@@ -259,7 +319,9 @@ const pickSchema = z.discriminatedUnion("kind", [
 export const picksSchema = z
   .array(pickSchema)
   .min(1, "Pick at least one dish")
-  .max(4, "Pick at most a main and three sides");
+  .refine((picks) => ["main", "side"].every((r) => picks.filter((p) => p.role === r).length <= 1), {
+    error: "Pick at most one main and one side",
+  });
 export type Pick = z.input<typeof pickSchema>;
 
 /**
