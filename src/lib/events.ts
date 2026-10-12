@@ -10,7 +10,9 @@ export type AppEvent =
   /** A library recipe changed (favorite, archive). No week is affected. */
   | { type: "recipe.updated"; recipeId: string }
   /** A recurring rule changed. Affected dinners publish their own events. */
-  | { type: "rules.updated" };
+  | { type: "rules.updated" }
+  /** A week's grocery list changed: a check-off, a manual item, or newly parsed ingredients. */
+  | { type: "grocery.updated"; weekStart: string };
 
 // One emitter across dev hot reloads.
 const globalForEvents = globalThis as unknown as { __events?: EventEmitter };

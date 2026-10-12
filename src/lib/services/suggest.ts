@@ -19,6 +19,7 @@ import {
 } from "@/lib/spoonacular/relax";
 import { ingredientLines } from "@/lib/spoonacular/types";
 import { appendDish, editDinner, markPlanned, recipeDetailFields, type Tx } from "./planner";
+import { parsePendingIngredients } from "./ingredients";
 import { assertAdult } from "./permissions";
 
 // The suggest flow (SPEC §4.3): library matches first, then Spoonacular
@@ -275,14 +276,17 @@ export async function addSuggestedDishes(
 ): Promise<number> {
   assertAdult(actor);
   const picks = picksSchema.parse(input);
-  return editDinner(db, actor, date, now, async (tx, dinner) => {
+  const recipeIds: string[] = [];
+  await editDinner(db, actor, date, now, async (tx, dinner) => {
     for (const pick of picks) {
       const recipeId = pick.kind === "library" ? await libraryRecipe(tx, pick.recipeId) : await saveOwnCopy(tx, pick);
       await appendDish(tx, dinner, { recipeId, role: pick.role });
+      recipeIds.push(recipeId);
     }
     await markPlanned(tx, dinner);
-    return picks.length;
   });
+  await parsePendingIngredients(db, { recipeIds, now });
+  return picks.length;
 }
 
 async function libraryRecipe(tx: Tx, recipeId: string): Promise<string> {
@@ -332,7 +336,7 @@ async function saveOwnCopy(tx: Tx, pick: SpoonacularPick): Promise<string> {
 }
 
 async function insertIngredients(tx: Tx, recipeId: string, lines: string[]) {
-  // Raw lines for now; parsing comes with the grocery list (SPEC §9).
+  // Stored raw; parsed after the commit (see ./ingredients.ts).
   if (!lines.length) return;
   await tx.insert(recipeIngredients).values(lines.map((rawText, position) => ({ recipeId, rawText, position })));
 }

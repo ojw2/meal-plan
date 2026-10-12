@@ -145,8 +145,15 @@ export const recipeIngredients = pgTable(
     unit: text("unit"),
     aisle: text("aisle"),
     position: integer("position").notNull(),
+    // When Spoonacular parsed the line. Null = not yet (new, or the quota ran
+    // out); a background job retries those. Lines it couldn't understand get
+    // a timestamp but no name, and stay raw.
+    parsedAt: timestamp("parsed_at", { withTimezone: true }),
   },
-  (t) => [index("recipe_ingredients_recipe_idx").on(t.recipeId)],
+  (t) => [
+    index("recipe_ingredients_recipe_idx").on(t.recipeId),
+    index("recipe_ingredients_pending_idx").on(t.recipeId).where(sql`${t.parsedAt} is null`),
+  ],
 );
 
 export const recurringRules = pgTable(
@@ -215,7 +222,10 @@ export const groceryChecks = pgTable(
     weekStartDate: date("week_start_date", { mode: "string" }).notNull(),
     itemKey: text("item_key").notNull(),
     checked: boolean("checked").notNull(),
+    // Grams, millilitres or a count, depending on the item key's bucket.
     checkedAmountSnapshot: real("checked_amount_snapshot"),
+    // The item as shown when checked, for "No longer needed" once it leaves the plan.
+    label: text("label"),
     checkedBy: uuid("checked_by").references(() => users.id),
     checkedAt: timestamp("checked_at", { withTimezone: true }),
   },
