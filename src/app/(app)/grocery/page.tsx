@@ -5,6 +5,7 @@ import { ActionButton } from "@/components/action-button";
 import { ActionForm } from "@/components/action-form";
 import { TextField } from "@/components/field";
 import { CheckRow } from "@/components/grocery/check-row";
+import { LiveScope } from "@/components/live-sync";
 import { PastWeekBanner } from "@/components/planner/past-week-banner";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +41,7 @@ export default async function GroceryPage({ searchParams }: PageProps<"/grocery"
 
   return (
     <>
+      <LiveScope grocery={[weekStart]} />
       <div className="flex flex-col gap-1">
         <Link href={`/week?d=${weekStart}`} className="text-sm text-muted-foreground hover:underline">
           ← Week

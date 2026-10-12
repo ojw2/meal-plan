@@ -4,6 +4,7 @@ import { ActionButton } from "@/components/action-button";
 import { ActionForm } from "@/components/action-form";
 import { ConfirmAction } from "@/components/confirm-action";
 import { SelectField, TextField } from "@/components/field";
+import { LiveScope } from "@/components/live-sync";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDb } from "@/db";
@@ -27,6 +28,7 @@ export default async function RecurringPage() {
 
   return (
     <>
+      <LiveScope rules library />
       <div className="flex flex-col gap-1">
         <Link href="/settings" className="text-sm text-muted-foreground hover:underline">
           ← Settings

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Clock, ExternalLink } from "lucide-react";
+import { LiveScope } from "@/components/live-sync";
 import { CookLabel, DayCard, NIGHT_OFF_LABEL } from "@/components/planner/day-card";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +41,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <LiveScope weeks={[cal.currentWeekStart, nextWeekStart]} />
       <div>
         <p className="text-sm text-muted-foreground">
           {formatDate(cal.today, { weekday: "long", month: "long", day: "numeric" })}

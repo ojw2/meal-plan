@@ -11,7 +11,7 @@ import {
 } from "@/lib/auth/credentials";
 import { deleteUserSessions, type SessionUser } from "@/lib/auth/session";
 import { ServiceError } from "@/lib/errors";
-import { publishDinnerDates } from "@/lib/events";
+import { publish, publishDinnerDates } from "@/lib/events";
 import { getHousehold, householdToday } from "./household";
 import { assertAdult } from "./permissions";
 
@@ -130,6 +130,7 @@ export async function createMember(
       ...credentialColumns(input.role, await hashSecret(secret)),
     })
     .returning({ id: users.id });
+  publish({ type: "household.updated" });
   return row.id;
 }
 
@@ -144,6 +145,7 @@ export async function updateMemberProfile(
   await getMember(db, id);
   await assertUsernameFree(db, profile.username, id);
   await db.update(users).set(profile).where(eq(users.id, id));
+  publish({ type: "household.updated" });
 }
 
 /** Sets a new password (adult) or PIN (kid) and signs the member out elsewhere. */
@@ -189,6 +191,7 @@ export async function changeRole(
     return dates;
   });
   publishDinnerDates(changed, (await getHousehold(db))?.weekStartDay ?? 0);
+  publish({ type: "household.updated" });
 }
 
 export async function archiveMember(db: Db, actor: SessionUser, id: string, now = new Date()) {
@@ -205,10 +208,12 @@ export async function archiveMember(db: Db, actor: SessionUser, id: string, now 
     return dates;
   });
   publishDinnerDates(changed, (await getHousehold(db))?.weekStartDay ?? 0);
+  publish({ type: "household.updated" });
 }
 
 export async function restoreMember(db: DbOrTx, actor: SessionUser, id: string) {
   assertAdult(actor);
   await getMember(db, id);
   await db.update(users).set({ archivedAt: null }).where(eq(users.id, id));
+  publish({ type: "household.updated" });
 }

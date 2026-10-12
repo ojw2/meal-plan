@@ -20,9 +20,27 @@ For real recipe suggestions, add a [Spoonacular](https://spoonacular.com/food-ap
 
 The app listens only on `127.0.0.1:3000` (`APP_BIND` / `APP_PORT`), so it's reachable only through Tailscale. Migrations run automatically when the app starts.
 
+### Install on phones
+
+Open the Tailscale HTTPS URL on the phone, then install the app. Installing requires HTTPS, which `tailscale serve` provides.
+- **Android (Chrome):** menu → **Install app** (or **Add to Home screen**).
+- **iPhone (Safari):** Share → **Add to Home Screen**.
+
+The installed app opens full screen. Changes made on one phone show up on the others within a couple of seconds. The app needs a connection and doesn't work offline.
+
+### Export
+
+**Settings → Your data → Export all data** downloads everything as JSON: settings, members (without passwords or PINs), recipes, dinners, recurring meals and grocery lists. Use it as a readable record. Restore from the backups below.
+
 ### Backups
 
-The `backup` service writes a `pg_dump` every night at 03:00 (in the `TZ` timezone) to `BACKUP_DIR` (default `./backups`) and keeps the latest 14. The dump files are owned by root.
+The `backup` service writes a `pg_dump` every night at 03:00 (in the `TZ` timezone) to `BACKUP_DIR` (default `./backups`) and keeps the latest 14. Point `BACKUP_DIR` at a NAS mount to keep them off the server. The dump files are owned by root.
+
+To take a backup right now, for example before an upgrade:
+
+```sh
+docker compose run --rm backup now
+```
 
 To restore:
 
