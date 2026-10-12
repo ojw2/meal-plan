@@ -79,7 +79,7 @@ test("an adult plans a whole week on a phone in under 5 minutes, with cooks fill
   // Every planned night got its cook from the schedule; nights off have none.
   for (const i of [0, 1, 2, 5, 6]) await expect(days.nth(i)).toContainText("Alex");
   for (const i of [3, 4]) await expect(days.nth(i)).not.toContainText("Alex");
-  await expect(page.getByText("Unassigned")).toHaveCount(0);
+  await expect(page.getByText("No cook")).toHaveCount(0);
 
   // The recurring night carries into the next week, cook included.
   await page.goto(`/week?d=${addDays(WEEK, 7)}`);

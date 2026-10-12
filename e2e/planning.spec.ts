@@ -68,7 +68,7 @@ test("adult plans tonight from the home screen", async ({ page }) => {
   await expect(tonight.getByText("Tacos")).toBeVisible();
   await expect(tonight.getByText("Mexican rice")).toBeVisible();
   await expect(tonight).toContainText("Alex is cooking");
-  await expect(tonight.getByRole("link", { name: "Recipe" })).toHaveAttribute("href", "https://example.com/tacos");
+  await expect(tonight.getByRole("link", { name: "Open recipe" })).toHaveAttribute("href", "https://example.com/tacos");
 });
 
 test("removing dishes and marking a night eat out", async ({ page }) => {
@@ -164,7 +164,9 @@ test("kids see tonight and the week but can't edit", async ({ page }) => {
   await page.goto(`/day/${dateIn(0)}`);
   await expect(dishNames(page)).toHaveText(["Tacos", "Mexican rice"]);
   await expect(page.getByText("Cook: Alex")).toBeVisible();
-  await expect(page.getByRole("button")).toHaveText(["Sign out"]);
+  // The account menu is the only button: nothing to edit.
+  await expect(page.getByRole("button")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Account" })).toBeVisible();
 
   await page.goto(`/day/${dateIn(-7)}`);
   await expect(page.getByText("This week is in the past, so it's read-only.")).toBeVisible();
