@@ -38,7 +38,8 @@ export const ruleInputSchema = z
     endDate: z.union([z.literal(""), isoDate]).transform((v) => v || null),
     /** Typed dish names. A name matching a library recipe's title links that recipe. */
     dishes: z
-      .array(z.object({ role, name: z.string().trim().max(120, "Dish name is too long") }))
+      .array(z.object({ role: z.string(), name: z.string().trim().max(120, "Dish name is too long") }))
+      // Blank (or absent) form rows are dropped before their role is checked.
       .transform((ds) => ds.filter((d) => d.name))
       .pipe(z.array(z.object({ role, name: z.string() })).min(1, "Add at least one dish").max(MAX_RULE_DISHES, `At most ${MAX_RULE_DISHES} dishes`)),
   })

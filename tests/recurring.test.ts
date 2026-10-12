@@ -32,6 +32,7 @@ const tacoNight = (overrides: Partial<RuleInput> = {}): RuleInput => ({
     { role: "main", name: "Tacos" },
     { role: "side", name: "Mexican rice" },
     { role: "side", name: "" }, // blank form rows are ignored
+    { role: "" as "side", name: "" }, // as are rows the form didn't render
   ],
   ...overrides,
 });
