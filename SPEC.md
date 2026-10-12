@@ -37,7 +37,7 @@ Single household, single tenant.
 | **Kid** | Read-only: home screen, week view, recipe details, grocery list. Cannot be assigned as a cook. | Username + 4–6 digit PIN |
 
 - The first account created at install time is an adult. After that, only adults can create, edit or remove members.
-- **Removing a member** is a soft delete. Historical dinners keep showing their name. Their assignments on future dinners become *Unassigned* and are flagged in the UI, and their slots in the default cook schedule are cleared.
+- **Removing a member** is a soft delete. Historical dinners keep showing their name. Their assignments on future dinners lose their cook and are flagged *No cook* in the UI, and their slots in the default cook schedule are cleared.
 - At least one active adult must always exist. The UI blocks removing or demoting the last adult.
 
 ## 3. Core concepts and data model
@@ -98,6 +98,7 @@ ApiUsage
 
 ### Dishes and cooks
 - One dinner can have multiple dishes (typically one main plus sides). **There is one cook per night**, stored on the `Dinner`, not on each dish.
+- The main dish should take in a protein and other ingredients the user wants to use in the dish. The side dish menu should do the same.
 - When a night becomes `planned` (its first dish is added), its cook defaults to `CookSchedule[weekday]`. Any adult can change it, which sets `cookManuallySet = true`. "Use default cook" clears the flag and re-applies the schedule.
 - If the cook schedule changes, future planned nights with `cookManuallySet = false` are updated. Past dinners and manually set cooks are left alone.
 - Removing a night's last dish returns it to `unplanned` and clears its cook.
@@ -256,7 +257,7 @@ Relaxation steps stop as soon as 3 results are collected. The time budget applie
 | Mixed units that can't merge | Listed side by side, never guessed |
 | Recipe missing servings | No scaling |
 | Manual dish without ingredients | Contributes nothing to the list |
-| Member removed | History keeps their name; future dishes become Unassigned and flagged; schedule slots cleared |
+| Member removed | History keeps their name; future dishes lose their cook and are flagged "No cook"; schedule slots cleared |
 | Last adult removal | Blocked |
 | Recipe archived | Hidden from pickers; past dinners still resolve |
 | Recurring rule edited | Only future, non-overridden instances change |
@@ -335,6 +336,13 @@ Relaxation steps stop as soon as 3 results are collected. The time budget applie
 46. **The PWA manifest is named "Meal Plan"**, not after the household. That way it needs no sign-in or database read, and the install prompt works from the login page. Icons are generated at build time, including an Apple touch icon for iOS, which ignores manifest icons. The service worker has no fetch handler, so nothing is cached.
 47. **Backups can be taken on demand** with `docker compose run --rm backup now`, for example before an upgrade, besides the nightly 03:00 run.
 
+**Added during Milestone 7:**
+
+48. **The look is "Market"**, picked from three mockups: herb green (`#2f6b3a`) on a soft off-white, white rounded cards, and Bricolage Grotesque throughout. It has a matching dark theme and follows the system setting. The app icon and theme color match.
+49. **Navigation is a floating bottom tab bar on phones** (Tonight, Week, Groceries, Library), which moves into the header from 768px up. Settings and Sign out are in an avatar menu in the header. Groceries opens the current week's list.
+50. **Each cook has their own color**, used wherever their name appears on a night. The color comes from the order members joined (kids included), so it never changes when someone joins or leaves. Six colors cycle. A planned night without a cook shows "No cook" in the attention color.
+51. **Home shows the week as a strip of seven day tiles** above tonight's card, each with a dot: filled when planned, an outline when eating out or having leftovers, and orange when a night from today on still needs a dish or a cook. Unplanned nights from today on show a "Plan" button for adults on Home and the week view. The week view shows how many of the 7 nights are settled (planned, eating out or leftovers).
+
 ## 10. Risks and open questions
 - **Spoonacular ToS:** *(reviewed in Milestone 3)* The terms allow caching for at most 1 hour and permanent storage of only the recipe id, title and image URL. The app keeps those and stores the rest as the household's own, adult-confirmed copy (§6, decision 19). This is still a grey area. If Spoonacular objects, drop the prefill and have adults type ingredients themselves.
 - **Free-tier quota (~150 points/day):** a full suggest flow with 2 sides and a couple of rerolls costs several points. Heavy planning days could exhaust the quota. Watch `ApiUsage` for the first few weeks, then decide whether the paid tier is worth it.
@@ -348,6 +356,7 @@ Relaxation steps stop as soon as 3 results are collected. The time budget applie
 4. **Library and reuse:** favorites, history and last-made, archive, copy last week, recurring rules.
 5. **Grocery list:** parsing, scaling, aggregation, aisles, check-offs with snapshots, manual items.
 6. **Real-time and polish:** SSE sync, PWA manifest, JSON export, backup container, Playwright end-to-end tests.
+7. **Gloss and UI/UX:** make the PWA look pleasing. Create a couple of mockups to decide from, then implement the chosen one.
 
 ## 12. Acceptance criteria (v1)
 - An adult can plan a full week (mix of suggested, manual, recurring and eat-out nights) on a phone in under 5 minutes, with cooks auto-filled.
