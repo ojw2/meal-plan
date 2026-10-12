@@ -276,6 +276,14 @@ Relaxation steps stop as soon as 3 results are collected. The time budget applie
 6. **Library matches appear first** in the suggest flow, to save quota.
 7. **Cooking instructions are not stored**. The app links to the source.
 
+**Added during Milestone 1 (implementation decisions):**
+
+8. **Removed members can be restored.** Archiving can be undone from Settings → Members.
+9. **Changing a member's role requires a new credential**, since adults use a password and kids a PIN. Demoting an adult releases their cook duties, just like archiving does.
+10. **Resetting a password or PIN signs that member out everywhere**, except when you reset your own.
+11. **Attempts during a lockout are neither checked nor counted.** A 4-digit PIN therefore allows at most about 480 guesses a day. This is acceptable for a tailnet-only app.
+12. **Sessions are opaque random tokens.** Only their HMAC (keyed with `SESSION_SECRET`) is stored. The rolling 90-day expiry lives in the database, and the cookie itself is long-lived.
+
 ## 10. Risks and open questions
 - **Spoonacular ToS:** the free tier limits caching (around 1 hour). Persisting chosen recipes to the library may exceed what's allowed, even for private non-commercial use. **Action:** read the current terms before building §4.5. A fallback is to store only `spoonacularId`, title and the user's own copy of the ingredients.
 - **Free-tier quota (~150 points/day):** a full suggest flow with 2 sides and a couple of rerolls costs several points. Heavy planning days could exhaust the quota. Watch `ApiUsage` for the first few weeks, then decide whether the paid tier is worth it.

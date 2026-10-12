@@ -2,6 +2,8 @@
 
 Self-hosted household dinner planner (PWA). **[SPEC.md](SPEC.md) is the source of truth** for features, data model, and edge-case behavior. Read the relevant section before working on a feature.
 
+@AGENTS.md
+
 ## Stack
 - Next.js (App Router, TypeScript strict), `output: "standalone"`
 - PostgreSQL 16 + Drizzle ORM / drizzle-kit migrations
@@ -13,14 +15,24 @@ Self-hosted household dinner planner (PWA). **[SPEC.md](SPEC.md) is the source o
 Dependencies: free to add whatever fits; prefer well-maintained, widely used packages.
 
 ## Commands
-> Fill in / correct these once the project is scaffolded (Milestone 1).
-- `pnpm dev`: dev server
-- `pnpm typecheck`: `tsc --noEmit`
+Node comes from fnm (`~/.local/share/fnm`); pnpm via corepack. Copy `.env.example` to `.env` first.
+- `pnpm db:up`: start the dev Postgres container (localhost:54329)
+- `pnpm dev`: dev server (runs pending migrations on start via `src/instrumentation.ts`)
+- `pnpm typecheck`: `next typegen && tsc --noEmit` (typegen provides `LayoutProps`/`PageProps`)
 - `pnpm lint`: ESLint
-- `pnpm test`: Vitest
-- `pnpm test:e2e`: Playwright
-- `pnpm db:generate` / `pnpm db:migrate`: Drizzle migrations
-- `docker compose up --build`: full stack
+- `pnpm test`: Vitest. Recreates and migrates a `<db>_test` database each run.
+- `pnpm test:e2e`: Playwright. Builds standalone and serves it on :3100 against a fresh `<db>_e2e` database. `E2E_SKIP_BUILD=1` reuses the last build; `E2E_BASE_URL=…` targets an already-running deployment (must be un-set-up).
+- `pnpm db:generate`: generate a migration after editing `src/db/schema.ts` (commit the SQL in `drizzle/`)
+- `docker compose up -d --build`: full stack (`app`, `db`, `backup`)
+- Verify Docker without touching dev data: `APP_PORT=3200 docker compose -p mealplan-verify up -d --build app db`, then `E2E_BASE_URL=http://127.0.0.1:3200 pnpm test:e2e`, then `docker compose -p mealplan-verify down -v`
+
+## Code conventions
+- **Cache Components is off** (`next.config.ts`). Pages render per request. A page that reads the DB but no cookies/headers must call `await connection()`, or the build will try to prerender it.
+- **Services** (`src/lib/services/*`) take `(db, actor, …)` and call `assertAdult(actor)` first for every mutation. Server actions only parse the form, call `requireUser()`, and call a service. Test permissions at the service level.
+- Services throw `ServiceError` for user-facing failures. Actions wrap service calls in `toFormState()`, which turns these into form errors.
+- Forms use `ActionForm` (submits via a transition so failed submits keep input; pass `resetOnSuccess` for "add" forms). Use native `<select>` via `SelectField` (better on phones).
+- Links that look like buttons: `<Link className={buttonVariants(...)}>`. Don't use Base UI `Button render={<Link/>}`, because it gives the link `role="button"`.
+- Tap targets: default `Button`/`Input` are 44px on mobile (`h-11 md:h-9`). Keep it that way.
 
 ## Workflow
 - Build in **milestone order (SPEC §11)**. Stop and check in with Omar at the end of each milestone. Don't start the next one unasked.
