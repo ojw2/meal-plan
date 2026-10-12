@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy } from "lucide-react";
+import { ActionButton } from "@/components/action-button";
 import { DayCard } from "@/components/planner/day-card";
 import { PastWeekBanner } from "@/components/planner/past-week-banner";
 import { buttonVariants } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { requireUser } from "@/lib/auth/dal";
 import { getWeek, plannerCalendar, weekAccess } from "@/lib/services/planner";
+import { materializeRecurring } from "@/lib/services/recurring";
 import { addDays, formatDate, isIsoDate, weekStartOf } from "@/lib/time";
+import { copyLastWeekAction } from "../day/actions";
 
 export const metadata: Metadata = { title: "Week" };
 
@@ -29,8 +32,12 @@ export default async function WeekPage({ searchParams }: PageProps<"/week">) {
   // Any date in the week works; it's normalized to the week's first day.
   const weekStart =
     typeof d === "string" && isIsoDate(d) ? weekStartOf(d, cal.weekStartDay) : cal.currentWeekStart;
+  // Opening a week fills its recurring meals (SPEC §4.6).
+  await materializeRecurring(db, weekStart, addDays(weekStart, 6));
   const [week, access] = await Promise.all([getWeek(db, weekStart), weekAccess(db, user, weekStart, cal.today)]);
   const isCurrent = weekStart === cal.currentWeekStart;
+  // Copy last week only fills nights from today on.
+  const canCopy = user.role === "adult" && addDays(weekStart, 6) >= cal.today;
 
   return (
     // data-wide lets the layout widen for the 7-column desktop grid.
@@ -62,6 +69,14 @@ export default async function WeekPage({ searchParams }: PageProps<"/week">) {
       </div>
 
       {access.past && <PastWeekBanner date={weekStart} unlocked={access.unlocked} isAdult={user.role === "adult"} />}
+
+      {canCopy && (
+        <div className="flex flex-wrap gap-2">
+          <ActionButton action={copyLastWeekAction} fields={{ date: weekStart }} toastSuccess>
+            <Copy /> Copy last week
+          </ActionButton>
+        </div>
+      )}
 
       <ol className="grid gap-3 lg:grid-cols-7" aria-label="Days">
         {week.map((dinner) => (

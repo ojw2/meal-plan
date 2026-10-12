@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowDown, ArrowUp, ExternalLink, Sparkles, X } from "lucide-react";
+import { ArrowDown, ArrowUp, BookOpen, ExternalLink, Repeat, Sparkles, X } from "lucide-react";
 import { ActionButton } from "@/components/action-button";
 import { ActionForm } from "@/components/action-form";
 import { ConfirmAction } from "@/components/confirm-action";
@@ -15,12 +15,14 @@ import { getDb } from "@/db";
 import { requireUser } from "@/lib/auth/dal";
 import { listActiveAdults } from "@/lib/services/members";
 import { getDinner, plannerCalendar, weekAccess, type DinnerView } from "@/lib/services/planner";
+import { materializeRecurring } from "@/lib/services/recurring";
 import { formatDate, isIsoDate, weekStartOf } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import {
   addManualDishAction,
   moveDishAction,
   removeDishAction,
+  repeatWeeklyAction,
   resetDinnerCookAction,
   saveDinnerDetailsAction,
   setDinnerStatusAction,
@@ -38,6 +40,7 @@ export default async function DayPage({ params }: PageProps<"/day/[date]">) {
   const db = getDb();
   const cal = await plannerCalendar(db);
   const weekStart = weekStartOf(date, cal.weekStartDay);
+  await materializeRecurring(db, date, date);
   const [dinner, access, adults] = await Promise.all([
     getDinner(db, date),
     weekAccess(db, user, weekStart, cal.today),
@@ -78,6 +81,9 @@ export default async function DayPage({ params }: PageProps<"/day/[date]">) {
       ) : (
         <>
           <DishList dinner={dinner} editable={editable} />
+          {dinner.status === "planned" && (
+            <Recurring dinner={dinner} editable={editable} isAdult={user.role === "adult"} />
+          )}
           {dinner.status === "planned" &&
             (editable ? (
               <DinnerDetails dinner={dinner} adults={adults} defaultServings={cal.defaultServings} />
@@ -110,7 +116,13 @@ function DishList({ dinner, editable }: { dinner: DinnerView; editable: boolean 
             <CardContent className="flex items-center gap-2">
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="font-medium" data-testid="dish-name">
-                  {dish.name}
+                  {dish.recipe ? (
+                    <Link href={`/library/${dish.recipe.id}`} className="underline-offset-4 hover:underline">
+                      {dish.name}
+                    </Link>
+                  ) : (
+                    dish.name
+                  )}
                 </span>
                 <span className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <Badge variant="outline">{dish.role === "main" ? "Main" : "Side"}</Badge>
@@ -167,6 +179,29 @@ function DishList({ dinner, editable }: { dinner: DinnerView; editable: boolean 
         </li>
       ))}
     </ul>
+  );
+}
+
+/** "Repeats every Tuesday", or a button to make it so (SPEC §4.6). */
+function Recurring({ dinner, editable, isAdult }: { dinner: DinnerView; editable: boolean; isAdult: boolean }) {
+  const weekday = formatDate(dinner.date, { weekday: "long" });
+  if (dinner.recurring && !dinner.recurring.overridden) {
+    return (
+      <p className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
+        <Repeat className="size-4" /> Repeats every {weekday}.
+        {isAdult && (
+          <Link href="/settings/recurring" className="underline underline-offset-4">
+            Manage recurring meals
+          </Link>
+        )}
+      </p>
+    );
+  }
+  if (!editable) return null;
+  return (
+    <ActionButton action={repeatWeeklyAction} fields={{ date: dinner.date }} variant="ghost" className="self-start">
+      <Repeat /> Repeat every {weekday}
+    </ActionButton>
   );
 }
 
@@ -232,9 +267,14 @@ function AddDish({ date, hasDishes }: { date: string; hasDishes: boolean }) {
         <CardTitle>Add a dish</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <Link href={`/day/${date}/suggest`} className={cn(buttonVariants(), "self-start")}>
-          <Sparkles /> Suggest recipes
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/day/${date}/suggest`} className={cn(buttonVariants())}>
+            <Sparkles /> Suggest recipes
+          </Link>
+          <Link href={`/day/${date}/library`} className={cn(buttonVariants({ variant: "outline" }))}>
+            <BookOpen /> From library
+          </Link>
+        </div>
         <p className="text-sm text-muted-foreground">Or type in what you&apos;re making:</p>
         {/* Keyed so the role default switches to "side" once the night has a dish. */}
         <ActionForm key={String(hasDishes)} action={addManualDishAction} submitLabel="Add dish" resetOnSuccess>

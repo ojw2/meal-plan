@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import { getDb } from "@/db";
-import { dinners, dishes, household, users } from "@/db/schema";
+import { dinners, dishes, household, recipeIngredients, recipes, users } from "@/db/schema";
 import { hashSecret } from "@/lib/auth/credentials";
 import { createSession, hashToken, type SessionUser } from "@/lib/auth/session";
 
@@ -72,4 +72,18 @@ export async function cookOf(dinnerId: string) {
 export async function withSession(user: SessionUser): Promise<SessionUser> {
   const token = await createSession(db(), user.id);
   return { ...user, sessionId: hashToken(token) };
+}
+
+/** Inserts a recipe (a manual main unless overridden) with optional raw ingredient lines. */
+export async function seedRecipe(values: Partial<typeof recipes.$inferInsert> & { title: string }, lines: string[] = []) {
+  const [r] = await db()
+    .insert(recipes)
+    .values({ source: "manual", dishType: "main", ...values })
+    .returning();
+  if (lines.length) {
+    await db()
+      .insert(recipeIngredients)
+      .values(lines.map((rawText, position) => ({ recipeId: r.id, rawText, position })));
+  }
+  return r;
 }

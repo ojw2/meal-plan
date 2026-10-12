@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDb } from "@/db";
 import { requireUser } from "@/lib/auth/dal";
 import { getDinners, plannerCalendar, weekGaps, type DinnerView } from "@/lib/services/planner";
+import { materializeRecurring } from "@/lib/services/recurring";
 import { addDays, formatDate } from "@/lib/time";
 
 function plural(n: number, word: string) {
@@ -26,6 +27,8 @@ export default async function HomePage() {
   const cal = await plannerCalendar(db);
   const nextWeekStart = addDays(cal.currentWeekStart, 7);
   // Current and next week in one read: the hero, the rest of this week, and the banner.
+  // Recurring meals fill in first, so the banner doesn't count them as open.
+  await materializeRecurring(db, cal.currentWeekStart, addDays(nextWeekStart, 6));
   const days = await getDinners(db, cal.currentWeekStart, addDays(nextWeekStart, 6));
   const thisWeek = days.slice(0, 7);
   const tonight = thisWeek.find((d) => d.date === cal.today)!;

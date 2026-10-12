@@ -304,6 +304,16 @@ Relaxation steps stop as soon as 3 results are collected. The time budget applie
 24. **Quota is tracked per UTC date**, because Spoonacular resets at midnight UTC. Cached pages are still served when the quota is exhausted. Searching is adults-only, since it spends quota. Expired cache rows are deleted, not just ignored.
 25. **Fixtures are a hand-written sample corpus.** No API key was available to record real responses. A fixture transport filters the corpus the way `complexSearch` would. The ingredients `quota-exhausted` and `spoonacular-down` simulate a 402 and a timeout. Production must set `SPOONACULAR_LIVE=1`.
 
+**Added during Milestone 4:**
+
+26. **Recurring instances are created lazily.** Whenever the home, week or day view reads a range of nights, any night from today on that has no dinner row yet gets the matching rule's dishes and the default cook. Past nights are never filled. A night that was cleared by hand keeps its (now unplanned) row, so it isn't refilled.
+27. **Rule changes recreate future, non-overridden instances.** Editing a rule (dishes, weekday or dates) or stopping it deletes those instances. The next read fills them again from whichever active rule covers them. Rules are never deleted, only stopped and restarted. Two active rules can't cover the same weekday on overlapping dates.
+28. **"Repeat every <weekday>" in the day editor** creates a rule from that night's dishes, starting that night, and links the night as the first instance. If the night's cook or servings were set by hand, it starts out overridden, so a later rule edit won't undo them. Rules are also managed in Settings → Recurring meals.
+29. **Rule dishes are typed by name in Settings.** A name that exactly matches a library recipe's title (case-insensitive, with autocomplete) links that recipe. Otherwise the name is stored as free text. A recipe already in the rule stays linked even if it was archived since.
+30. **Copy last week fills "empty" nights from today on**, meaning unplanned nights with or without a dinner row. Unplanned source nights are skipped. Copied nights aren't linked to any rule. Recurring meals are filled first, so they count as already planned. The toast also mentions nights skipped because they're already past.
+31. **"Last made" and "times made" count planned dinners before today.** Tonight counts once it's over.
+32. **Archived recipes can be restored** from the library's "Archived" filter. Hidden recipes from decision 14 also appear there. Favoriting, archiving and restoring are adults-only. Kids can browse the library and recipe pages.
+
 ## 10. Risks and open questions
 - **Spoonacular ToS:** *(reviewed in Milestone 3)* The terms allow caching for at most 1 hour and permanent storage of only the recipe id, title and image URL. The app keeps those and stores the rest as the household's own, adult-confirmed copy (§6, decision 19). This is still a grey area. If Spoonacular objects, drop the prefill and have adults type ingredients themselves.
 - **Free-tier quota (~150 points/day):** a full suggest flow with 2 sides and a couple of rerolls costs several points. Heavy planning days could exhaust the quota. Watch `ApiUsage` for the first few weeks, then decide whether the paid tier is worth it.
