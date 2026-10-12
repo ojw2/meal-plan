@@ -9,6 +9,8 @@ import { getDb } from "@/db";
 import { requireAdultPage } from "@/lib/auth/dal";
 import { getCookSchedule, getHousehold } from "@/lib/services/household";
 import { listActiveAdults } from "@/lib/services/members";
+import { getQuota } from "@/lib/spoonacular/client";
+import { isLive } from "@/lib/spoonacular/transport";
 import { WEEKDAYS } from "@/lib/time";
 import { saveCookScheduleAction, saveHouseholdAction } from "./actions";
 
@@ -17,10 +19,11 @@ export const metadata: Metadata = { title: "Settings" };
 export default async function SettingsPage() {
   await requireAdultPage();
   const db = getDb();
-  const [household, schedule, adults] = await Promise.all([
+  const [household, schedule, adults, quota] = await Promise.all([
     getHousehold(db),
     getCookSchedule(db),
     listActiveAdults(db),
+    getQuota(db),
   ]);
   if (!household) throw new Error("Household not set up");
 
@@ -92,6 +95,30 @@ export default async function SettingsPage() {
           </ActionForm>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Spoonacular</CardTitle>
+          <CardDescription>
+            Recipe suggestions use a daily allowance of API points that resets at midnight UTC.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-1 text-sm" data-testid="quota">
+          {quota ? (
+            <p>
+              Today: {formatPoints(quota.used)} points used
+              {quota.left !== null && <>, {formatPoints(quota.left)} left</>}.
+            </p>
+          ) : (
+            <p>No suggestions searched today.</p>
+          )}
+          {!isLive() && (
+            <p className="text-muted-foreground">Using built-in sample recipes (SPOONACULAR_LIVE is not set).</p>
+          )}
+        </CardContent>
+      </Card>
     </>
   );
 }
+
+const formatPoints = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 1 });

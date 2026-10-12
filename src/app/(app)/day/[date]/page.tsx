@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowDown, ArrowUp, ExternalLink, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, Sparkles, X } from "lucide-react";
 import { ActionButton } from "@/components/action-button";
 import { ActionForm } from "@/components/action-form";
 import { ConfirmAction } from "@/components/confirm-action";
@@ -9,12 +9,14 @@ import { CheckboxField, SelectField, TextareaField, TextField } from "@/componen
 import { CookLabel, NIGHT_OFF_LABEL } from "@/components/planner/day-card";
 import { PastWeekBanner } from "@/components/planner/past-week-banner";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDb } from "@/db";
 import { requireUser } from "@/lib/auth/dal";
 import { listActiveAdults } from "@/lib/services/members";
 import { getDinner, plannerCalendar, weekAccess, type DinnerView } from "@/lib/services/planner";
 import { formatDate, isIsoDate, weekStartOf } from "@/lib/time";
+import { cn } from "@/lib/utils";
 import {
   addManualDishAction,
   moveDishAction,
@@ -229,7 +231,11 @@ function AddDish({ date, hasDishes }: { date: string; hasDishes: boolean }) {
       <CardHeader>
         <CardTitle>Add a dish</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col gap-4">
+        <Link href={`/day/${date}/suggest`} className={cn(buttonVariants(), "self-start")}>
+          <Sparkles /> Suggest recipes
+        </Link>
+        <p className="text-sm text-muted-foreground">Or type in what you&apos;re making:</p>
         {/* Keyed so the role default switches to "side" once the night has a dish. */}
         <ActionForm key={String(hasDishes)} action={addManualDishAction} submitLabel="Add dish" resetOnSuccess>
           <input type="hidden" name="date" value={date} />
