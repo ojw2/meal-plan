@@ -1,0 +1,6 @@
+# Dev/test overlay: exposes Postgres on localhost:54329 for `pnpm dev` and tests.
+#   docker compose -f compose.yaml -f compose.dev.yaml up -d db
+services:
+  db:
+    ports:
+      - "127.0.0.1:54329:5432"
