@@ -314,6 +314,17 @@ Relaxation steps stop as soon as 3 results are collected. The time budget applie
 31. **"Last made" and "times made" count planned dinners before today.** Tonight counts once it's over.
 32. **Archived recipes can be restored** from the library's "Archived" filter. Hidden recipes from decision 14 also appear there. Favoriting, archiving and restoring are adults-only. Kids can browse the library and recipe pages.
 
+**Added during Milestone 5:**
+
+33. **Ingredients are parsed right after saving**, outside the save itself, so a slow API never holds up the plan. If the quota is used up or Spoonacular is down, the lines stay pending and show as written under "Other". An hourly background job retries them, and the quota resets at midnight UTC. The same job parses lines saved before Milestone 5. Lines Spoonacular can't read stay raw for good.
+34. **One checkbox per item.** Checking an item stores a check-off for each of its unit buckets (`itemKey` = ingredient + bucket), with the amount the server computes at that moment. If a bucket grows, or a new unit appears for that item, it resurfaces with a note such as "+1 onion needed since you checked this". Unchecking an item deletes its check-offs, so dismissing an entry under "No longer needed" forgets it.
+35. **Display units are imperial unless every amount in a bucket was metric.** Amounts are rounded to quarters (½, ¼, ⅓). Size words ("2 large eggs") and "whole" count as plain counts. Every other unit ("can", "clove", "head") is its own bucket. A plain count shown next to other units reads "2 whole".
+36. **Unparsed lines are grouped by the whole line**, lower-cased, so only identical lines merge.
+37. **The grocery list follows the past-week lock.** A past week's list is read-only unless the week is unlocked.
+38. **Changing the week start day re-keys this week and later weeks.** This week's check-offs and extra items move to the new current week. Each later week moves to the new week that holds most of its days. When two weeks land on the same new week, the latest check-off of an item wins. Past weeks are left alone. The settings warning appears as soon as the day is changed, before saving.
+39. **Kids see the "Grocery list" link** on the week view, since they can read the list (§4.8). Copy last week stays adults-only.
+40. **The fixture parser is rule-based.** It reads a leading amount and a unit word, then matches the longest known ingredient name, using the fixture corpus's ids and a small aisle table.
+
 ## 10. Risks and open questions
 - **Spoonacular ToS:** *(reviewed in Milestone 3)* The terms allow caching for at most 1 hour and permanent storage of only the recipe id, title and image URL. The app keeps those and stores the rest as the household's own, adult-confirmed copy (§6, decision 19). This is still a grey area. If Spoonacular objects, drop the prefill and have adults type ingredients themselves.
 - **Free-tier quota (~150 points/day):** a full suggest flow with 2 sides and a couple of rerolls costs several points. Heavy planning days could exhaust the quota. Watch `ApiUsage` for the first few weeks, then decide whether the paid tier is worth it.
